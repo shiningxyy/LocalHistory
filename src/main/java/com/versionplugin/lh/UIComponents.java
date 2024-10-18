@@ -1,4 +1,4 @@
-package com.yourplugin.lh;
+package com.versionplugin.lh;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
