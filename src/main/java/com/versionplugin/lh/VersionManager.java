@@ -1,78 +1,58 @@
 package com.versionplugin.lh;
 
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileEvent;
+import com.intellij.openapi.vfs.VirtualFileListener;
+import com.intellij.openapi.vfs.VirtualFileManager;
+
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class VersionManager {
-    // 存储文件名与其版本列表的映射
-    private final Map<String, List<FileVersion>> versionMap;
+
+    // 用于保存每个文件的历史版本
+    private final Map<String, List<FileVersion>> fileHistoryMap = new HashMap<>();
 
     public VersionManager() {
-        versionMap = new HashMap<>();
-    }
-    // 初始化文件版本
-    public void initializeFileVersion(String filename, String filePath, String initialContent) {
-        FileVersion initialVersion = new FileVersion(filename, filePath, initialContent);
-        addVersion(filename, initialVersion);
-    }
-
-    // 添加新版本
-    public void addVersion(String fileName, FileVersion fileVersion) {
-        versionMap.computeIfAbsent(fileName, k -> new ArrayList<>()).add(fileVersion);
-    }
-
-    // 获取指定文件的所有版本
-    public List<FileVersion> getVersions(String fileName) {
-        return versionMap.getOrDefault(fileName, new ArrayList<>());
-    }
-
-    // 获取最新版本
-    public FileVersion getLatestVersion(String fileName) {
-        List<FileVersion> versions = getVersions(fileName);
-        if (!versions.isEmpty()) {
-            return versions.get(versions.size() - 1); // 返回列表的最后一个版本
-        }
-        return null; // 如果没有版本，返回null
-    }
-
-    // 根据版本索引获取指定版本
-    public FileVersion getVersionByIndex(String fileName, int index) {
-        List<FileVersion> versions = getVersions(fileName);
-        if (index >= 0 && index < versions.size()) {
-            return versions.get(index);
-        }
-        return null; // 如果索引无效，返回null
-    }
-
-    public boolean shouldSaveVersion(String fileName, String newContent, double threshold) {
-        List<FileVersion> versions = getVersions(fileName);
-        if (versions.isEmpty()) {
-            return true; // 如果没有版本，保存
-        }
-
-        String lastVersionContent = versions.get(versions.size() - 1).getContent();
-        double changeRatio = calculateChangeRatio(lastVersionContent, newContent);
-
-        return changeRatio > threshold; // 返回是否超过阈值
-    }
-
-    // 计算内容变化比例
-    private double calculateChangeRatio(String oldContent, String newContent) {
-        int oldLength = oldContent.length();
-        int newLength = newContent.length();
-        int changes = 0;
-
-        // 计算变化的字符数
-        for (int i = 0; i < Math.min(oldLength, newLength); i++) {
-            if (oldContent.charAt(i) != newContent.charAt(i)) {
-                changes++;
+        // 注册文件监听器
+        VirtualFileManager.getInstance().addVirtualFileListener(new VirtualFileListener() {
+            @Override
+            public void contentsChanged(VirtualFileEvent event) {
+                VirtualFile file = event.getFile();
+                // 文件内容发生改变时保存版本
+                saveVersion(file);
             }
-        }
-
-        changes += Math.abs(oldLength - newLength); // 计算长度差异
-        return (double) changes / Math.max(oldLength, newLength); // 返回变化比例
+        });
     }
 
+    // 保存文件版本
+    public void saveVersion(VirtualFile file) {
+        try {
+            String content = new String(file.contentsToByteArray());
+            String timestamp = LocalDateTime.now().toString();
+            FileVersion newVersion = new FileVersion(content, timestamp, file.getPath());
+
+            fileHistoryMap.putIfAbsent(file.getPath(), new ArrayList<>());
+            fileHistoryMap.get(file.getPath()).add(newVersion);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 获取文件的历史版本
+    public List<FileVersion> getFileHistory(String filePath) {
+        return fileHistoryMap.getOrDefault(filePath, new ArrayList<>());
+    }
+
+    // 恢复指定的文件版本
+    public FileVersion getSpecificVersion(String filePath, int versionIndex) {
+        List<FileVersion> versions = getFileHistory(filePath);
+        if (versionIndex >= 0 && versionIndex < versions.size()) {
+            return versions.get(versionIndex);
+        }
+        return null;
+    }
 }
