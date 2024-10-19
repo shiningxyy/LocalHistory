@@ -6,43 +6,48 @@ import java.util.List;
 import java.util.Map;
 
 public class VersionManager {
-    // 存储文件路径与其版本列表的映射
+    // 存储文件名与其版本列表的映射
     private final Map<String, List<FileVersion>> versionMap;
 
     public VersionManager() {
         versionMap = new HashMap<>();
     }
+    // 初始化文件版本
+    public void initializeFileVersion(String filename, String filePath, String initialContent) {
+        FileVersion initialVersion = new FileVersion(filename, filePath, initialContent);
+        addVersion(filename, initialVersion);
+    }
 
     // 添加新版本
-    public void addVersion(String filePath, FileVersion fileVersion) {
-        versionMap.computeIfAbsent(filePath, k -> new ArrayList<>()).add(fileVersion);
-    }//将新的 fileVersion 添加到该列表中
+    public void addVersion(String fileName, FileVersion fileVersion) {
+        versionMap.computeIfAbsent(fileName, k -> new ArrayList<>()).add(fileVersion);
+    }
 
     // 获取指定文件的所有版本
-    public List<FileVersion> getVersions(String filePath) {
-        return versionMap.getOrDefault(filePath, new ArrayList<>());
+    public List<FileVersion> getVersions(String fileName) {
+        return versionMap.getOrDefault(fileName, new ArrayList<>());
     }
 
     // 获取最新版本
-    public FileVersion getLatestVersion(String filePath) {
-        List<FileVersion> versions = getVersions(filePath);
+    public FileVersion getLatestVersion(String fileName) {
+        List<FileVersion> versions = getVersions(fileName);
         if (!versions.isEmpty()) {
-            return versions.get(versions.size() - 1); // 返回列表的最后一个版本，假设是最新的
+            return versions.get(versions.size() - 1); // 返回列表的最后一个版本
         }
         return null; // 如果没有版本，返回null
     }
 
     // 根据版本索引获取指定版本
-    public FileVersion getVersionByIndex(String filePath, int index) {
-        List<FileVersion> versions = getVersions(filePath);
+    public FileVersion getVersionByIndex(String fileName, int index) {
+        List<FileVersion> versions = getVersions(fileName);
         if (index >= 0 && index < versions.size()) {
             return versions.get(index);
         }
         return null; // 如果索引无效，返回null
     }
 
-    public boolean shouldSaveVersion(String filePath, String newContent, double threshold) {
-        List<FileVersion> versions = getVersions(filePath);
+    public boolean shouldSaveVersion(String fileName, String newContent, double threshold) {
+        List<FileVersion> versions = getVersions(fileName);
         if (versions.isEmpty()) {
             return true; // 如果没有版本，保存
         }
@@ -53,7 +58,7 @@ public class VersionManager {
         return changeRatio > threshold; // 返回是否超过阈值
     }
 
-    // 计算内容变化比例的示例方法
+    // 计算内容变化比例
     private double calculateChangeRatio(String oldContent, String newContent) {
         int oldLength = oldContent.length();
         int newLength = newContent.length();

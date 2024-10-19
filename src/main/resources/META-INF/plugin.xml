@@ -2,7 +2,7 @@
     <id>com.versionplugin.versioncontrol</id>
     <name>Version Control Tool</name>
     <version>1.0-SNAPSHOT</version>
-    <vendor email="youremail@example.com" url="http://yourwebsite.com">Your Name</vendor>
+    <vendor>test</vendor>
 
     <!-- 插件的描述 -->
     <description>
@@ -15,14 +15,14 @@
 
 
 
-    <!-- 声明工具窗口 -->
     <extensions defaultExtensionNs="com.intellij">
+        <!-- 声明工具窗口 -->
         <toolWindow id="VersionViewer" factoryClass="com.versionplugin.lh.VersionViewerToolWindowFactory" anchor="bottom" />
-    </extensions>
 
-    <!-- 声明启动活动 -->
-    <extensions defaultExtensionNs="com.intellij">
+        <!-- 声明启动活动 -->
         <applicationService serviceImplementation="com.versionplugin.lh.VersionManagerStartupActivity" />
+
+
     </extensions>
 
 </idea-plugin>
