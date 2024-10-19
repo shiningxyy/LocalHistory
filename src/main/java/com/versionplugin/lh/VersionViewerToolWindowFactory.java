@@ -29,14 +29,14 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         versionManageActivity.initializeFileVersions(project); // 初始化文件版本
 
         // 创建版本表格
-        String[] columnNames = {"文件名", "版本时间", "文件路径"};
+        String[] columnNames = {"File Name", "Version Time", "File Path"};
         tableModel = new DefaultTableModel(columnNames, 0);
         versionTable = new JBTable(tableModel);
         versionTable.setFillsViewportHeight(true);
         JBScrollPane scrollPane = new JBScrollPane(versionTable);
 
         // 创建刷新按钮
-        JButton refreshButton = new JButton("刷新");
+        JButton refreshButton = new JButton("refresh");
         refreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
