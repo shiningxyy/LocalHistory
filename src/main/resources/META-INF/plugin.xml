@@ -4,9 +4,13 @@
     <version>1.0-SNAPSHOT</version>
     <vendor>Your Name</vendor>
 
+<<<<<<< Updated upstream
 
 
     <!-- 注册工具窗口 -->
+=======
+    <!-- 声明工具窗口 -->
+>>>>>>> Stashed changes
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Version Viewer" factoryClass="com.yourplugin.lh.VersionViewer" anchor="left" />
     </extensions>
