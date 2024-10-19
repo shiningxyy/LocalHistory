@@ -1,12 +1,9 @@
 package com.versionplugin.lh;
 
-import com.intellij.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
-import com.intellij.openapi.fileEditor.FileDocumentManagerListener;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -20,13 +17,11 @@ public class VersionManagerStartupActivity implements StartupActivity {
 
     public VersionManagerStartupActivity() {
         this.versionManager = new VersionManager();
-        System.out.println("运行Activity");
     }
 
     @Override
     public void runActivity(@NotNull Project project) {
         registerDocumentListener(project);
-        registerSaveListener(project); // Register the save listener
     }
 
     private void registerDocumentListener(Project project) {
@@ -44,11 +39,10 @@ public class VersionManagerStartupActivity implements StartupActivity {
                                 public void beforeDocumentChange(@NotNull DocumentEvent event) {
                                     String newContent = event.getDocument().getText();
                                     String filePath = getCurrentFilePath(project); // 获取当前文件路径
-                                    String filename=getFileName(project);
                                     double changeThreshold = 0.1; // 设定变化阈值
 
                                     if (versionManager.shouldSaveVersion(filePath, newContent, changeThreshold)) {
-                                        versionManager.addVersion(filename, new FileVersion(filename,filePath, newContent)); // 添加版本
+                                        versionManager.addVersion(filePath, new FileVersion(filePath, newContent, "author")); // 替换 "author" 为实际的作者信息
                                     }
                                 }
                             });
@@ -59,22 +53,6 @@ public class VersionManagerStartupActivity implements StartupActivity {
         });
     }
 
-    private void registerSaveListener(Project project) {
-        // Attach a listener to the FileDocumentManager to detect save events
-        ApplicationManager.getApplication().getMessageBus().connect(project)
-                .subscribe(AppTopics.FILE_DOCUMENT_SYNC, new FileDocumentManagerListener() {
-                    @Override
-                    public void beforeDocumentSaving(@NotNull Document document) {
-                        String newContent = document.getText();
-                        String filePath = getCurrentFilePath(project); // 获取当前文件路径
-                        System.out.println("监听器");
-                        System.out.println(filePath);
-
-                        versionManager.addVersion(filePath, new FileVersion(filePath, newContent, "author"));
-                    }
-                });
-    }
-
     private String getCurrentFilePath(Project project) {
         FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
         FileEditor[] editors = fileEditorManager.getAllEditors();
@@ -83,20 +61,6 @@ public class VersionManagerStartupActivity implements StartupActivity {
             VirtualFile file = editor.getFile();
             if (file != null) {
                 return file.getPath(); // 返回当前文件的路径
-            }
-        }
-        return null; // 如果没有找到文件，返回 null
-    }
-
-    // 获取当前文件的文件名
-    private String getFileName(Project project) {
-        FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
-        FileEditor[] editors = fileEditorManager.getAllEditors();
-
-        for (FileEditor editor : editors) {
-            VirtualFile file = editor.getFile();
-            if (file != null) {
-                return file.getName(); // 返回当前文件的文件名
             }
         }
         return null; // 如果没有找到文件，返回 null

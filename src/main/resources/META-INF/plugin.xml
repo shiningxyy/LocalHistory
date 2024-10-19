@@ -12,20 +12,17 @@
     <!-- 插件依赖 IntelliJ IDEA 版本 -->
     <depends>com.intellij.modules.platform</depends>
 
-    <!-- 插件的应用程序入口 -->
-    <application-components>
-        <component>
-            <implementation-class>com.versionplugin.lh.MyPlugin</implementation-class>
-        </component>
-    </application-components>
 
 
-    <!-- 注册一个工具窗口 -->
+
+    <!-- 声明工具窗口 -->
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Version Viewer"
-                    factoryClass="com.versionplugin.lh.VersionViewer"
-                    anchor="left"
-                    icon="/icons/versionviewer.svg"/>
+        <toolWindow id="VersionViewer" factoryClass="com.versionplugin.lh.VersionViewerToolWindowFactory" anchor="bottom" />
+    </extensions>
+
+    <!-- 声明启动活动 -->
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.versionplugin.lh.VersionManagerStartupActivity" />
     </extensions>
 
 </idea-plugin>
