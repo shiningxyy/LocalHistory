@@ -11,6 +11,7 @@ repositories {
     mavenCentral()
 }
 
+
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {

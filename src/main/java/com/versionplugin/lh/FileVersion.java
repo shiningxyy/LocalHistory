@@ -3,19 +3,25 @@ package com.versionplugin.lh;
 import java.time.LocalDateTime;
 
 public class FileVersion {
+    private String filename;         // 文件名
     private String filePath;         // 文件路径
     private String content;          // 文件内容
     private LocalDateTime timestamp; // 修改时间
-    private String author;           // 修改者
 
-    public FileVersion(String filePath, String content, String author) {
+
+    public FileVersion(String filename,String filePath, String content) {
+        this.filename = filename;
         this.filePath = filePath;
         this.content = content;
         this.timestamp = LocalDateTime.now(); // 设置为当前时间
-        this.author = author;
+
     }
-
-
+    public String getFilename() {
+        return filename;
+    }
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
 
     public String getFilePath() {
         return filePath;
@@ -41,21 +47,14 @@ public class FileVersion {
         this.timestamp = timestamp;
     }
 
-    public String getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
 
     @Override
     public String toString() {
-        return "FileVersion{" +
+        return "FileVersion{"+
+                "filename='" + filename + '\'' +
                 "filePath='" + filePath + '\'' +
                 ", content='" + content + '\'' +
-                ", timestamp=" + timestamp +
-                ", author='" + author + '\'' +
+                ", timestamp=" + timestamp+
                 '}';
     }
 }
