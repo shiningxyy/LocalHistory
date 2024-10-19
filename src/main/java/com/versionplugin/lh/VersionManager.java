@@ -13,9 +13,9 @@ public class VersionManager {
         versionMap = new HashMap<>();
     }
     // 初始化文件版本
-    public void initializeFileVersion(String filepath, String filePath, String initialContent) {
-        FileVersion initialVersion = new FileVersion(filepath, filePath, initialContent);
-        addVersion(filepath, initialVersion);//路径和版本map
+    public void initializeFileVersion(String filename, String filePath, String initialContent) {
+        FileVersion initialVersion = new FileVersion(filename, filePath, initialContent);
+        addVersion(filePath, initialVersion);//路径和版本map
         System.out.println(initialVersion);
     }
 

@@ -43,7 +43,7 @@ public class VersionManageActivity implements StartupActivity {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            versionManager.initializeFileVersion(filePath, filePath, initialContent); // 创建初始版本
+            versionManager.initializeFileVersion(fileName, filePath, initialContent); // 创建初始版本
         }
     }
 
