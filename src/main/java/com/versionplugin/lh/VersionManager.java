@@ -16,6 +16,7 @@ public class VersionManager {
     public void initializeFileVersion(String filepath, String filePath, String initialContent) {
         FileVersion initialVersion = new FileVersion(filepath, filePath, initialContent);
         addVersion(filepath, initialVersion);//路径和版本map
+        System.out.println(initialVersion);
     }
 
     // 添加新版本

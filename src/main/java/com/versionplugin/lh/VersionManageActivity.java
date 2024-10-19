@@ -1,18 +1,24 @@
 package com.versionplugin.lh;
 
+import com.intellij.openapi.fileEditor.*;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.roots.ProjectRootManager;
-
+import com.intellij.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.event.DocumentEvent;
+import com.intellij.openapi.editor.event.DocumentListener;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VersionManageActivity {
+public class VersionManageActivity implements StartupActivity {
     private final VersionManager versionManager;
 
     public VersionManageActivity() {
@@ -37,7 +43,7 @@ public class VersionManageActivity {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            versionManager.initializeFileVersion(fileName, filePath, initialContent); // 创建初始版本
+            versionManager.initializeFileVersion(filePath, filePath, initialContent); // 创建初始版本
         }
     }
 
@@ -81,6 +87,35 @@ public class VersionManageActivity {
             }
         }
     }
+    // 获取当前项目的所有文件路径
+    public static List<String> getAllFilePaths(Project project) {
+        List<String> filePaths = new ArrayList<>();
+
+        // 获取项目的根目录
+        VirtualFile[] projectRoots = ProjectRootManager.getInstance(project).getContentRoots();
+
+        for (VirtualFile root : projectRoots) {
+            // 遍历项目根目录下的所有文件和文件夹
+            visitFilesPathRecursively(root, filePaths);
+        }
+
+        return filePaths;
+    }
+
+    // 递归遍历文件夹并添加文件路径到列表
+    private static void visitFilesPathRecursively(@NotNull VirtualFile root, List<String> filePaths) {
+        root.refresh(false, true);  // 确保文件系统是最新的
+
+        // 使用 for 循环遍历子文件
+        VirtualFile[] children = root.getChildren();
+        for (VirtualFile child : children) {
+            if (child.isDirectory()) {
+                visitFilesPathRecursively(child, filePaths); // 递归遍历子目录
+            } else {
+                filePaths.add(child.getPath()); // 添加文件路径到列表
+            }
+        }
+    }
 
     // 获取当前项目的所有 VirtualFile
     public static List<VirtualFile> getAllFiles(Project project) {
@@ -115,4 +150,38 @@ public class VersionManageActivity {
     public VersionManager getVersionManager() {
         return versionManager;
     }
+
+    @Override
+    public void runActivity(@NotNull Project project) {
+        //registerDocumentListener(project);
+        registerSaveListener(project); // Register the save listener
+    }
+
+
+    private void registerSaveListener(Project project) {
+        ApplicationManager.getApplication().getMessageBus().connect(project)
+                .subscribe(AppTopics.FILE_DOCUMENT_SYNC, new FileDocumentManagerListener() {
+                    @Override
+                    public void beforeDocumentSaving(@NotNull Document document) {
+                        // 获取文件路径
+                        VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(document);
+                        if (virtualFile != null) {
+                            String fileName=virtualFile.getName();
+                            String filePath = virtualFile.getPath();
+                            System.out.println("File being saved: " + filePath);
+
+                            // 保存版本
+                            System.out.println("启用监听器");
+                            String newContent = document.getText();
+                            versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
+                            System.out.println("文件名: " + fileName + ", 版本数量: " + versionManager.getVersions(filePath).size());
+                        } else {
+                            System.out.println("Unable to determine file path. Virtual file is null.");
+                        }
+                    }
+                });
+    }
+
+
+
 }
