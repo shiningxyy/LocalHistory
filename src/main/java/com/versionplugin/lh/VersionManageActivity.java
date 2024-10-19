@@ -1,18 +1,24 @@
 package com.versionplugin.lh;
 
+import com.intellij.openapi.fileEditor.*;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.openapi.roots.ProjectRootManager;
-
+import com.intellij.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.event.DocumentEvent;
+import com.intellij.openapi.editor.event.DocumentListener;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VersionManageActivity {
+public class VersionManageActivity implements StartupActivity {
     private final VersionManager versionManager;
 
     public VersionManageActivity() {
@@ -115,4 +121,37 @@ public class VersionManageActivity {
     public VersionManager getVersionManager() {
         return versionManager;
     }
+
+    @Override
+    public void runActivity(@NotNull Project project) {
+        //registerDocumentListener(project);
+        registerSaveListener(project); // Register the save listener
+    }
+
+
+    private void registerSaveListener(Project project) {
+        ApplicationManager.getApplication().getMessageBus().connect(project)
+                .subscribe(AppTopics.FILE_DOCUMENT_SYNC, new FileDocumentManagerListener() {
+                    @Override
+                    public void beforeDocumentSaving(@NotNull Document document) {
+                        // 获取文件路径
+                        VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(document);
+                        if (virtualFile != null) {
+                            String fileName=virtualFile.getName();
+                            String filePath = virtualFile.getPath();
+                            System.out.println("File being saved: " + filePath);
+
+                            // 保存版本
+                            System.out.println("启用监听器");
+                            String newContent = document.getText();
+                            versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
+                        } else {
+                            System.out.println("Unable to determine file path. Virtual file is null.");
+                        }
+                    }
+                });
+    }
+
+
+
 }

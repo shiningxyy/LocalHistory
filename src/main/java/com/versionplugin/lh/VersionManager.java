@@ -20,7 +20,19 @@ public class VersionManager {
 
     // 添加新版本
     public void addVersion(String fileName, FileVersion fileVersion) {
-        versionMap.computeIfAbsent(fileName, k -> new ArrayList<>()).add(fileVersion);
+        List<FileVersion> versions = versionMap.get(fileName);
+
+        if (versions == null) {
+            // 如果文件名没有对应的版本列表，创建一个新的列表
+            versions = new ArrayList<>();
+            versionMap.put(fileName, versions);
+        }
+
+        // 添加新的版本到版本列表中
+        versions.add(fileVersion);
+
+        // 打印版本信息，调试时可以使用
+        System.out.println("Added new version for file: " + fileName);
     }
 
     // 获取指定文件的所有版本
