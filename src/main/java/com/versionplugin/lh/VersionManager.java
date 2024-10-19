@@ -13,24 +13,24 @@ public class VersionManager {
         versionMap = new HashMap<>();
     }
     // 初始化文件版本
-    public void initializeFileVersion(String filename, String filePath, String initialContent) {
-        FileVersion initialVersion = new FileVersion(filename, filePath, initialContent);
-        addVersion(filename, initialVersion);
+    public void initializeFileVersion(String filepath, String filePath, String initialContent) {
+        FileVersion initialVersion = new FileVersion(filepath, filePath, initialContent);
+        addVersion(filepath, initialVersion);//路径和版本map
     }
 
     // 添加新版本
-    public void addVersion(String fileName, FileVersion fileVersion) {
-        versionMap.computeIfAbsent(fileName, k -> new ArrayList<>()).add(fileVersion);
+    public void addVersion(String filepath, FileVersion fileVersion) {
+        versionMap.computeIfAbsent(filepath, k -> new ArrayList<>()).add(fileVersion);
     }
 
     // 获取指定文件的所有版本
-    public List<FileVersion> getVersions(String fileName) {
-        return versionMap.getOrDefault(fileName, new ArrayList<>());
+    public List<FileVersion> getVersions(String filepath) {
+        return versionMap.getOrDefault(filepath, new ArrayList<>());
     }
 
     // 获取最新版本
-    public FileVersion getLatestVersion(String fileName) {
-        List<FileVersion> versions = getVersions(fileName);
+    public FileVersion getLatestVersion(String filepath) {
+        List<FileVersion> versions = getVersions(filepath);
         if (!versions.isEmpty()) {
             return versions.get(versions.size() - 1); // 返回列表的最后一个版本
         }
@@ -38,16 +38,16 @@ public class VersionManager {
     }
 
     // 根据版本索引获取指定版本
-    public FileVersion getVersionByIndex(String fileName, int index) {
-        List<FileVersion> versions = getVersions(fileName);
+    public FileVersion getVersionByIndex(String filepath, int index) {
+        List<FileVersion> versions = getVersions(filepath);
         if (index >= 0 && index < versions.size()) {
             return versions.get(index);
         }
         return null; // 如果索引无效，返回null
     }
 
-    public boolean shouldSaveVersion(String fileName, String newContent, double threshold) {
-        List<FileVersion> versions = getVersions(fileName);
+    public boolean shouldSaveVersion(String filepath, String newContent, double threshold) {
+        List<FileVersion> versions = getVersions(filepath);
         if (versions.isEmpty()) {
             return true; // 如果没有版本，保存
         }
