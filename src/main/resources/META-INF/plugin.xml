@@ -20,7 +20,7 @@
         <toolWindow id="VersionViewer" factoryClass="com.versionplugin.lh.VersionViewerToolWindowFactory" anchor="bottom" />
 
         <!-- 声明启动活动 -->
-        <applicationService serviceImplementation="com.versionplugin.lh.VersionManagerStartupActivity" />
+       <!-- <applicationService serviceImplementation="com.versionplugin.lh.VersionManageActivity" />-->
 
 
     </extensions>
