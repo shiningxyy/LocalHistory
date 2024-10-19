@@ -27,7 +27,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         // 初始化 VersionManageActivity
         versionManageActivity = new VersionManageActivity();
         versionManageActivity.initializeFileVersions(project); // 初始化文件版本
-
+        versionManageActivity.runActivity(project);
         // 创建版本表格
         String[] columnNames = {"File Name", "Version Time", "File Path"};
         tableModel = new DefaultTableModel(columnNames, 0);
@@ -64,21 +64,20 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         tableModel.setRowCount(0);
 
         // 获取当前项目中的所有文件名
-        List<String> files = VersionManageActivity.getAllFileNames(project);
+        List<String> files = VersionManageActivity.getAllFilePaths(project);
         System.out.println("文件列表: " + files);
 
         // 遍历每个文件，获取其版本并填充表格
         for (String filePath : files) {
             String fileName = new File(filePath).getName(); // 仅获取文件名
-            System.out.println("文件名: " + fileName);
 
-            List<FileVersion> versions = versionManageActivity.getVersionManager().getVersions(fileName);
+            List<FileVersion> versions = versionManageActivity.getVersionManager().getVersions(filePath);
             if (versions == null || versions.isEmpty()) {
                 System.out.println("未找到版本信息，文件名: " + fileName);
                 continue; // 跳过当前文件，继续下一个文件
             }
 
-            System.out.println("文件名: " + fileName + ", 版本数量: " + versions.size());
+            System.out.println("文件路径: " + filePath + ", 版本数量: " + versions.size());
 
             for (FileVersion version : versions) {
                 Object[] rowData = {
