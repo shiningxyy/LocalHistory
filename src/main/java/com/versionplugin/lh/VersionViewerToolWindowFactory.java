@@ -57,26 +57,10 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
             }
         });
 
-        // 创建提交按钮
-        JButton commitButton = new JButton("Commit");
-        commitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 在此处实现提交的逻辑
-                // 例如，可以调用版本管理的提交方法
-                System.out.println("Committing changes...");
-                // TODO: 添加具体的提交逻辑
-            }
-        });
-
         // 设置布局
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(refreshButton);
-        buttonPanel.add(commitButton); // 添加提交按钮
-
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(buttonPanel, BorderLayout.NORTH); // 将按钮面板放在上方
+        panel.add(refreshButton, BorderLayout.NORTH); // 将刷新按钮放在上方
 
         // 使用 ToolWindow 的 setComponent 方法来设置内容
         toolWindow.getContentManager().addContent(
