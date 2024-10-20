@@ -35,7 +35,7 @@ public class VersionManager {
     public void addVersion(String filepath, FileVersion fileVersion) {
         versionMap.computeIfAbsent(filepath, k -> new ArrayList<>()).add(fileVersion);
         // 更新当前版本号
-        currentVersionMap.put(filepath, versionMap.get(filepath).size() - 1); // 设置为最新版本索引
+        currentVersionMap.put(filepath, versionMap.get(filepath).size() ); // 设置为最新版本索引
     }
 
     // 获取指定文件的所有版本
@@ -86,8 +86,8 @@ public class VersionManager {
             // 写回文件，替换发生改变的行
             Files.write(filePath, fileLines, StandardOpenOption.TRUNCATE_EXISTING);
             System.out.println("文件内容已回滚到版本 " + number);
-
-            currentVersionMap.put(filepath, number); // 更新当前版本号为回滚后的版本
+            currentVersionMap.put(filepath, number+1); // 更新当前版本号为回滚后的版本
+            // 输出当前文件路径的版本号
             System.out.println("当前文件路径: " + filepath + " 的版本号: " + currentVersionMap.get(filepath));
             System.out.println("总版本数量: " + getVersions(filepath).size());
 

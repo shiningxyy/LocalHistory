@@ -169,7 +169,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                 // 区分操作列，处理不同的按钮点击事件
                 if (label.equals("View")) {
                     // 查看内容按钮操作
-                    versionManageActivity.getVersionManager().compareVersion(filePath, versionNumber-1,currentNumber);
+                    versionManageActivity.getVersionManager().compareVersion(filePath, versionNumber-1,currentNumber-1);
                 } else if (label.equals("Rollback")) {
                     // 回滚按钮操作
                     if(Objects.equals(getCurrentFilePath(project), filePath)){
