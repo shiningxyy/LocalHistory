@@ -5,6 +5,7 @@ import javax.swing.text.*;
 import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
@@ -50,18 +51,43 @@ public class VersionManager {
         return versionMap.keySet();
     }
 
-    public String rollbackVersion(String filepath, int number) {
+    public String rollbackVersion(String filepath, int number, int curnum) {
         List<FileVersion> versions = getVersions(filepath);
         FileVersion rollbackVer = versions.get(number);
         String rollbackCon = rollbackVer.getContent();
 
+        FileVersion curVer = versions.get(curnum);
+        String curCon = curVer.getContent();
+
         System.out.println("回滚内容：\n" + rollbackCon);
+
         try {
-            // 将新内容写入文件，覆盖原有内容
-            Files.write(Paths.get(filepath), rollbackCon.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+            // 读取当前文件内容为列表形式，每一行作为列表的一项
+            List<String> rollbackLines = Arrays.asList(rollbackCon.split("\n"));
+            List<String> currentLines = Arrays.asList(curCon.split("\n"));
+
+            Path filePath = Paths.get(filepath);
+            List<String> fileLines = Files.readAllLines(filePath);
+
+            // 遍历每一行，找到不同的行进行替换
+            for (int i = 0; i < rollbackLines.size(); i++) {
+                if (i >= currentLines.size() || !rollbackLines.get(i).equals(currentLines.get(i))) {
+                    fileLines.set(i, rollbackLines.get(i)); // 只替换不同的行
+                }
+            }
+
+            // 如果 rollbackCon 的行数比当前文件内容多，追加多余的行
+            if (rollbackLines.size() > fileLines.size()) {
+                for (int i = fileLines.size(); i < rollbackLines.size(); i++) {
+                    fileLines.add(rollbackLines.get(i));
+                }
+            }
+
+            // 写回文件，替换发生改变的行
+            Files.write(filePath, fileLines, StandardOpenOption.TRUNCATE_EXISTING);
             System.out.println("文件内容已回滚到版本 " + number);
+
             currentVersionMap.put(filepath, number); // 更新当前版本号为回滚后的版本
-            // 输出当前文件路径的版本号
             System.out.println("当前文件路径: " + filepath + " 的版本号: " + currentVersionMap.get(filepath));
             System.out.println("总版本数量: " + getVersions(filepath).size());
 
@@ -71,6 +97,7 @@ public class VersionManager {
         }
         return rollbackCon;
     }
+
 
     public void compareVersion(String filepath, int thisNum, int currentNum) {
         // 获取版本内容
