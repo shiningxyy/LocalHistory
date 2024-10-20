@@ -7,10 +7,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class VersionManager {
     // 存储文件名与其版本列表的映射
@@ -35,7 +33,9 @@ public class VersionManager {
     public List<FileVersion> getVersions(String filepath) {
         return versionMap.getOrDefault(filepath, new ArrayList<>());
     }
-
+    public Set<String> getFilenames() {
+        return versionMap.keySet();
+    }
     // 获取最新版本
     public FileVersion getLatestVersion(String filepath) {
         List<FileVersion> versions = getVersions(filepath);
