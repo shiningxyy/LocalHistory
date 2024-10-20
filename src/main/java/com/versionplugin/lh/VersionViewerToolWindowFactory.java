@@ -1,5 +1,9 @@
 package com.versionplugin.lh;
 
+import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
@@ -7,8 +11,8 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import org.jetbrains.annotations.NotNull;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.DefaultTableCellRenderer;
+import org.jetbrains.annotations.Nullable;
+
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -16,12 +20,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
-
-import javax.swing.*;
+import java.util.Objects;
 import javax.swing.table.*;
-import java.awt.*;
-import java.awt.event.*;
 
 
 public class VersionViewerToolWindowFactory implements ToolWindowFactory {
@@ -53,10 +57,26 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
             }
         });
 
+        // 创建提交按钮
+        JButton commitButton = new JButton("Commit");
+        commitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 在此处实现提交的逻辑
+                // 例如，可以调用版本管理的提交方法
+                System.out.println("Committing changes...");
+                // TODO: 添加具体的提交逻辑
+            }
+        });
+
         // 设置布局
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(commitButton); // 添加提交按钮
+
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(refreshButton, BorderLayout.NORTH); // 将刷新按钮放在上方
+        panel.add(buttonPanel, BorderLayout.NORTH); // 将按钮面板放在上方
 
         // 使用 ToolWindow 的 setComponent 方法来设置内容
         toolWindow.getContentManager().addContent(
@@ -80,7 +100,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         // 清空现有表格数据
         tableModel.setRowCount(0);
 
-        // 获取当前项目中的所有文件路径
+        // 获取当前项目中的所有文件名
         List<String> files = VersionManageActivity.getAllFilePaths(project);
         System.out.println("文件列表: " + files);
 
@@ -119,34 +139,36 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return null;
+            setText((value == null) ? "Button" : value.toString());
+            return this;
         }
     }
 
-
-
-    // 自定义按钮编辑器
+    // 自定义编辑器：处理按钮点击事件
     class ButtonEditor extends DefaultCellEditor {
-        private JButton button;
-        private String label;
 
-        public ButtonEditor(JCheckBox checkBox) {
+        private String label;
+        private JButton button;
+        private boolean isPushed;
+        private Project project;
+
+        public ButtonEditor(JCheckBox checkBox, Project project) {
             super(checkBox);
+            this.project = project;
             button = new JButton();
             button.setOpaque(true);
             button.addActionListener(new ActionListener() {
-                @Override
                 public void actionPerformed(ActionEvent e) {
-                    fireEditingStopped(); // 结束编辑
-                    showFileContent(label); // 显示文件内容
+                    fireEditingStopped();
                 }
             });
         }
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            label = value == null ? "" : value.toString();
+            label = (value == null) ? "Button" : value.toString();
             button.setText(label);
+            isPushed = true;
             return button;
         }
 
@@ -154,23 +176,32 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         public Object getCellEditorValue() {
             if (isPushed) {
                 int row = versionTable.getSelectedRow();
+                String fileName=(String) tableModel.getValueAt(row, 0);
                 String filePath = (String) tableModel.getValueAt(row, 2); // 获取文件路径
                 int versionNumber = (int) tableModel.getValueAt(row, 3); // 获取文件版本号
-                List<FileVersion> fileContent = versionManageActivity.getVersionManager().getVersions(filePath);
 
+                List<FileVersion> fileContent = versionManageActivity.getVersionManager().getVersions(filePath);
+                int currentNumber=versionManageActivity.getVersionManager().getCurrentVersion(filePath);
                 // 区分操作列，处理不同的按钮点击事件
                 if (label.equals("View")) {
                     // 查看内容按钮操作
-                    JOptionPane.showMessageDialog(button,
-                            fileContent.get(versionNumber - 1).getContent(),
-                            "查看文件内容",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    versionManageActivity.getVersionManager().compareVersion(filePath, versionNumber-1,currentNumber-1);
                 } else if (label.equals("Rollback")) {
                     // 回滚按钮操作
-                   versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
-                   JOptionPane.showMessageDialog(button,
-                          "文件已回滚到版本: " + versionNumber,
-                          "回滚操作成功", JOptionPane.INFORMATION_MESSAGE);
+                    if(Objects.equals(getCurrentFilePath(project), filePath)){
+                        versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
+
+                        refreshEditor(project,filePath);
+                        JOptionPane.showMessageDialog(button,
+                                "文件已回滚到版本: " + versionNumber,
+                                "回滚操作成功", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                    else{
+                        // 如果文件路径不同，弹出警告框
+                        JOptionPane.showMessageDialog(button,
+                                "你不能将这个文件回滚到当前文件上！",
+                                "回滚操作失败", JOptionPane.WARNING_MESSAGE);
+                    }
                 }
             }
 
@@ -188,6 +219,52 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         protected void fireEditingStopped() {
             super.fireEditingStopped();
         }
+
+        // 刷新打开的文件编辑器内容
+        public void refreshEditor(Project project, String filePath) {
+            // 获取 VirtualFile 对象
+            VirtualFile virtualFile = FileEditorManager.getInstance(project).getSelectedFiles()[0]; // 当前选中文件
+            if (virtualFile == null) {
+                return; // 如果没有打开的文件，直接返回
+            }
+
+            // 刷新文件的内容
+            try {
+                // 重新加载文件内容
+                virtualFile.refresh(false, false);
+
+                // 通过 Document API 获取该文件的内容
+                @Nullable Document document = FileDocumentManager.getInstance().getDocument(virtualFile);
+
+                if (document != null) {
+                    String newContent = new String(Files.readAllBytes(Paths.get(filePath))); // 读取最新内容
+
+                    // 使用 WriteCommandAction 修改文件内容
+                    WriteCommandAction.runWriteCommandAction(project, () -> {
+                        document.setText(newContent); // 更新内容
+                    });
+
+                    // 重新加载编辑器中的文件
+                    FileEditorManager.getInstance(project).openFile(virtualFile, true);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+        public String getCurrentFilePath(Project project) {
+            // 获取当前打开的文件
+            VirtualFile[] openFiles = FileEditorManager.getInstance(project).getSelectedFiles();
+
+            if (openFiles.length > 0) {
+                VirtualFile currentFile = openFiles[0]; // 获取第一个打开的文件
+                return currentFile.getPath(); // 返回文件的路径
+            }
+
+            return null; // 如果没有打开的文件，返回null
+        }
     }
+
 }
 
