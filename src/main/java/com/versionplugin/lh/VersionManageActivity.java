@@ -153,11 +153,10 @@ public class VersionManageActivity implements StartupActivity {
 
     @Override
     public void runActivity(@NotNull Project project) {
-        //registerDocumentListener(project);
         registerSaveListener(project); // Register the save listener
     }
 
-
+    //创建监听器监听保存动作
     private void registerSaveListener(Project project) {
         ApplicationManager.getApplication().getMessageBus().connect(project)
                 .subscribe(AppTopics.FILE_DOCUMENT_SYNC, new FileDocumentManagerListener() {

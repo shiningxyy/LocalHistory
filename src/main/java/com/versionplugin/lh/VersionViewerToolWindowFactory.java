@@ -36,14 +36,14 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         versionManageActivity.runActivity(project);
 
         // 创建版本表格
-        String[] columnNames = {"File Name", "Version Time", "File Path", "Version Number","Action"};
+        String[] columnNames = {"File Name", "Version Time", "File Path", "Version Number", "View Content", "Rollback"};
         tableModel = new DefaultTableModel(columnNames, 0);
         versionTable = new JBTable(tableModel);
         versionTable.setFillsViewportHeight(true);
         JBScrollPane scrollPane = new JBScrollPane(versionTable);
 
         // 创建刷新按钮
-        JButton refreshButton = new JButton("refresh");
+        JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -65,8 +65,12 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         refreshTable(project); // 初始化表格内容
 
         // 添加按钮渲染器和编辑器
-        versionTable.getColumn("Action").setCellRenderer(new ButtonRenderer());
-        versionTable.getColumn("Action").setCellEditor(new ButtonEditor(new JCheckBox(), project));
+        versionTable.getColumn("View Content").setCellRenderer(new ButtonRenderer());
+        versionTable.getColumn("View Content").setCellEditor(new ButtonEditor(new JCheckBox(), project));
+
+        // 添加回滚按钮的渲染器和编辑器
+        versionTable.getColumn("Rollback").setCellRenderer(new ButtonRenderer());
+        versionTable.getColumn("Rollback").setCellEditor(new ButtonEditor(new JCheckBox(), project));
     }
 
     // 刷新表格内容
@@ -96,7 +100,8 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                         version.getTimestamp(),          // 版本时间
                         version.getFilePath(),           // 文件路径
                         index,                           // 版本号
-                        "View Content"                   // 按钮显示的文字
+                        "View",                  // 查看内容按钮
+                        "Rollback"                      // 回滚按钮
                 };
                 tableModel.addRow(rowData); // 添加到表格中
                 index++; // 递增版本号
@@ -112,7 +117,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            setText((value == null) ? "View Content" : value.toString());
+            setText((value == null) ? "Button" : value.toString());
             return this;
         }
     }
@@ -136,9 +141,10 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                 }
             });
         }
+
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            label = (value == null) ? "View Content" : value.toString();
+            label = (value == null) ? "Button" : value.toString();
             button.setText(label);
             isPushed = true;
             return button;
@@ -147,13 +153,25 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         @Override
         public Object getCellEditorValue() {
             if (isPushed) {
-                // 在此处处理按钮的点击事件
                 int row = versionTable.getSelectedRow();
                 String filePath = (String) tableModel.getValueAt(row, 2); // 获取文件路径
                 int versionNumber = (int) tableModel.getValueAt(row, 3); // 获取文件版本号
-                List<FileVersion> fileContent=versionManageActivity.getVersionManager().getVersions(filePath);
-                JOptionPane.showMessageDialog(button, "查看文件内容: " + fileContent.get(versionNumber-1).getContent());
-                // 在此处可以打开文件内容或执行其他操作
+                List<FileVersion> fileContent = versionManageActivity.getVersionManager().getVersions(filePath);
+
+                // 区分操作列，处理不同的按钮点击事件
+                if (label.equals("View")) {
+                    // 查看内容按钮操作
+                    JOptionPane.showMessageDialog(button,
+                            fileContent.get(versionNumber - 1).getContent(),
+                            "查看文件内容",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } else if (label.equals("Rollback")) {
+                    // 回滚按钮操作
+                   versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
+                   JOptionPane.showMessageDialog(button,
+                          "文件已回滚到版本: " + versionNumber,
+                          "回滚操作成功", JOptionPane.INFORMATION_MESSAGE);
+                }
             }
 
             isPushed = false;
@@ -171,5 +189,5 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
             super.fireEditingStopped();
         }
     }
-
 }
+

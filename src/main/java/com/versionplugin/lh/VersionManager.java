@@ -1,5 +1,9 @@
 package com.versionplugin.lh;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,33 +51,24 @@ public class VersionManager {
         return null; // 如果索引无效，返回null
     }
 
-    public boolean shouldSaveVersion(String filepath, String newContent, double threshold) {
+
+    public void rollbackVersion(String filepath,int number){
         List<FileVersion> versions = getVersions(filepath);
-        if (versions.isEmpty()) {
-            return true; // 如果没有版本，保存
+        FileVersion rollbackVer=versions.get(number);
+        String rollbackCon= rollbackVer.getContent();
+
+        System.out.println("回滚内容：\n"+rollbackCon);
+        try {
+            // 将新内容写入文件，覆盖原有内容
+            Files.write(Paths.get(filepath), rollbackCon.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+            //System.out.println("文件内容已回滚到版本 " + number);
+
+            String currentContent = new String(Files.readAllBytes(Paths.get(filepath)));
+            System.out.println("当前文件内容: \n" + currentContent);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("回滚操作失败: " + e.getMessage());
         }
-
-        String lastVersionContent = versions.get(versions.size() - 1).getContent();
-        double changeRatio = calculateChangeRatio(lastVersionContent, newContent);
-
-        return changeRatio > threshold; // 返回是否超过阈值
-    }
-
-    // 计算内容变化比例
-    private double calculateChangeRatio(String oldContent, String newContent) {
-        int oldLength = oldContent.length();
-        int newLength = newContent.length();
-        int changes = 0;
-
-        // 计算变化的字符数
-        for (int i = 0; i < Math.min(oldLength, newLength); i++) {
-            if (oldContent.charAt(i) != newContent.charAt(i)) {
-                changes++;
-            }
-        }
-
-        changes += Math.abs(oldLength - newLength); // 计算长度差异
-        return (double) changes / Math.max(oldLength, newLength); // 返回变化比例
     }
 
 }
