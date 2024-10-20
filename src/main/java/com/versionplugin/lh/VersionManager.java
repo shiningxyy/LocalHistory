@@ -36,23 +36,7 @@ public class VersionManager {
     public Set<String> getFilenames() {
         return versionMap.keySet();
     }
-    // 获取最新版本
-    public FileVersion getLatestVersion(String filepath) {
-        List<FileVersion> versions = getVersions(filepath);
-        if (!versions.isEmpty()) {
-            return versions.get(versions.size() - 1); // 返回列表的最后一个版本
-        }
-        return null; // 如果没有版本，返回null
-    }
 
-    // 根据版本索引获取指定版本
-    public FileVersion getVersionByIndex(String filepath, int index) {
-        List<FileVersion> versions = getVersions(filepath);
-        if (index >= 0 && index < versions.size()) {
-            return versions.get(index);
-        }
-        return null; // 如果索引无效，返回null
-    }
 
 
     public String rollbackVersion(String filepath,int number){
@@ -170,4 +154,15 @@ public class VersionManager {
         return textPane;
     }
 
+    public boolean hasVersion(String filePath) {
+        List<FileVersion> versions = getVersions(filePath);
+        if (!versions.isEmpty()) {
+            return true;
+        }
+        return false;
+    }
+
+    public void removeVersion(String filePath) {
+        versionMap.remove(filePath);
+    }
 }

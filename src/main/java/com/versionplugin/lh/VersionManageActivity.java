@@ -3,15 +3,13 @@ package com.versionplugin.lh;
 import com.intellij.openapi.fileEditor.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileVisitor;
+import com.intellij.openapi.vfs.*;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.event.DocumentEvent;
-import com.intellij.openapi.editor.event.DocumentListener;
+import com.intellij.openapi.vfs.newvfs.BulkFileListener;
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -29,12 +27,12 @@ public class VersionManageActivity implements StartupActivity {
     // 初始化文件版本
     public void initializeFileVersions(Project project) {
         List<VirtualFile> files = getAllFiles(project); // 获取当前项目中的所有文件
-        System.out.println("文件列表: " + files);
+        //System.out.println("文件列表: " + files);
 
         for (VirtualFile file : files) {
             String fileName = file.getName(); // 获取文件名
             String filePath = file.getPath(); // 获取文件路径
-            System.out.println("文件名: " + fileName);
+            //System.out.println("文件名: " + fileName);
 
             // 获取文件内容
             String initialContent = "";
@@ -88,6 +86,7 @@ public class VersionManageActivity implements StartupActivity {
             }
         }
     }
+
     // 获取当前项目的所有文件路径
     public static List<String> getAllFilePaths(Project project) {
         Set<String> keySet = versionManager.getFilenames();
@@ -148,6 +147,9 @@ public class VersionManageActivity implements StartupActivity {
     @Override
     public void runActivity(@NotNull Project project) {
         registerSaveListener(project); // Register the save listener
+        //MyFileDeleteListener listener = new MyFileDeleteListener();
+        //VirtualFileManager.getInstance().addVirtualFileListener(listener);
+        registerBulkDeleteListener(project);
     }
 
     //创建监听器监听保存动作
@@ -167,7 +169,7 @@ public class VersionManageActivity implements StartupActivity {
                             System.out.println("启用监听器");
                             String newContent = document.getText();
                             versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
-                            System.out.println("文件名: " + fileName + ", 版本数量: " + versionManager.getVersions(filePath).size());
+
                         } else {
                             System.out.println("Unable to determine file path. Virtual file is null.");
                         }
@@ -175,6 +177,50 @@ public class VersionManageActivity implements StartupActivity {
                 });
     }
 
+    public void registerBulkDeleteListener(Project project) {
+        ApplicationManager.getApplication().getMessageBus().connect(project)
+                .subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
+                    @Override
+                    public void before(@NotNull List<? extends VFileEvent> events) {
+                        for (VFileEvent event : events) {
+                            if (event.isFromSave()) {
+                                // 跳过保存事件
+                                continue;
+                            }
+
+                            VirtualFile file = event.getFile();
+                            if (file != null && event.isValid()) {
+                                String filePath = file.getPath();
+                                String fileName = file.getName();
+
+                                // 自定义删除前操作
+                                System.out.println("File is being deleted: " + filePath);
+
+                                // 你可以选择在文件删除之前保存版本或执行其他操作
+                                if (versionManager.hasVersion(filePath)) {
+                                    versionManager.removeVersion(filePath);
+                                    System.out.println("Removed versions for file: " + filePath);
+                                    System.out.println("文件名: " + fileName + ", 版本数量: " + versionManager.getVersions(filePath).size());
+                                } else {
+                                    System.out.println("No versions found for file: " + filePath);
+                                }
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void after(@NotNull List<? extends VFileEvent> events) {
+                        for (VFileEvent event : events) {
+                            VirtualFile file = event.getFile();
+                            if (file != null && event.isValid()) {
+                                String filePath = file.getPath();
+                                System.out.println("File deleted: " + filePath);
+                                // 在此处执行其他你想在文件删除后执行的操作
+                            }
+                        }
+                    }
+                });
+    }
 
 
 }
