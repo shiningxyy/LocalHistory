@@ -1,5 +1,9 @@
 package com.versionplugin.lh;
 
+import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
@@ -7,6 +11,8 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -14,12 +20,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
-
-import javax.swing.*;
 import javax.swing.table.*;
-import java.awt.*;
-import java.awt.event.*;
 
 
 public class VersionViewerToolWindowFactory implements ToolWindowFactory {
@@ -109,6 +114,8 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         }
     }
 
+
+
     // 自定义渲染器：用于显示按钮
     class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
@@ -172,6 +179,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                     // 回滚按钮操作
                    String rollbackVer=versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
                    versionManageActivity.getVersionManager().addVersion(filePath,new FileVersion(fileName,filePath,rollbackVer));
+                   refreshEditor(project,filePath);
                    JOptionPane.showMessageDialog(button,
                           "文件已回滚到版本: " + versionNumber,
                           "回滚操作成功", JOptionPane.INFORMATION_MESSAGE);
@@ -192,6 +200,40 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         protected void fireEditingStopped() {
             super.fireEditingStopped();
         }
+
+        // 刷新打开的文件编辑器内容
+        public void refreshEditor(Project project, String filePath) {
+            // 获取 VirtualFile 对象
+            VirtualFile virtualFile = FileEditorManager.getInstance(project).getSelectedFiles()[0]; // 当前选中文件
+            if (virtualFile == null) {
+                return; // 如果没有打开的文件，直接返回
+            }
+
+            // 刷新文件的内容
+            try {
+                // 重新加载文件内容
+                virtualFile.refresh(false, false);
+
+                // 通过 Document API 获取该文件的内容
+                @Nullable Document document = FileDocumentManager.getInstance().getDocument(virtualFile);
+
+                if (document != null) {
+                    String newContent = new String(Files.readAllBytes(Paths.get(filePath))); // 读取最新内容
+
+                    // 使用 WriteCommandAction 修改文件内容
+                    WriteCommandAction.runWriteCommandAction(project, () -> {
+                        document.setText(newContent); // 更新内容
+                    });
+
+                    // 重新加载编辑器中的文件
+                    FileEditorManager.getInstance(project).openFile(virtualFile, true);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
+
 }
 
