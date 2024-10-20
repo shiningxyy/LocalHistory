@@ -13,45 +13,57 @@ import java.util.List;
 public class VersionManager {
     // 存储文件名与其版本列表的映射
     private final Map<String, List<FileVersion>> versionMap;
+    // 存储文件路径与当前版本号的映射
+    private final Map<String, Integer> currentVersionMap;
 
     public VersionManager() {
         versionMap = new HashMap<>();
+        currentVersionMap = new HashMap<>(); // 初始化当前版本映射
     }
+
     // 初始化文件版本
     public void initializeFileVersion(String filename, String filePath, String initialContent) {
         FileVersion initialVersion = new FileVersion(filename, filePath, initialContent);
-        addVersion(filePath, initialVersion);//路径和版本map
+        addVersion(filePath, initialVersion); // 路径和版本map
+        currentVersionMap.put(filePath, 1); // 初始化版本号为1
         System.out.println(initialVersion);
     }
 
     // 添加新版本
     public void addVersion(String filepath, FileVersion fileVersion) {
         versionMap.computeIfAbsent(filepath, k -> new ArrayList<>()).add(fileVersion);
+        // 更新当前版本号
+        currentVersionMap.put(filepath, versionMap.get(filepath).size() - 1); // 设置为最新版本索引
     }
 
     // 获取指定文件的所有版本
     public List<FileVersion> getVersions(String filepath) {
         return versionMap.getOrDefault(filepath, new ArrayList<>());
     }
+
+    public int getCurrentVersion(String filepath) {
+        return currentVersionMap.getOrDefault(filepath, -1); // 返回当前版本号，未找到返回-1
+    }
+
     public Set<String> getFilenames() {
         return versionMap.keySet();
     }
 
-
-
-    public String rollbackVersion(String filepath,int number){
+    public String rollbackVersion(String filepath, int number) {
         List<FileVersion> versions = getVersions(filepath);
-        FileVersion rollbackVer=versions.get(number);
-        String rollbackCon= rollbackVer.getContent();
+        FileVersion rollbackVer = versions.get(number);
+        String rollbackCon = rollbackVer.getContent();
 
-        System.out.println("回滚内容：\n"+rollbackCon);
+        System.out.println("回滚内容：\n" + rollbackCon);
         try {
             // 将新内容写入文件，覆盖原有内容
             Files.write(Paths.get(filepath), rollbackCon.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
             System.out.println("文件内容已回滚到版本 " + number);
+            currentVersionMap.put(filepath, number); // 更新当前版本号为回滚后的版本
+            // 输出当前文件路径的版本号
+            System.out.println("当前文件路径: " + filepath + " 的版本号: " + currentVersionMap.get(filepath));
+            System.out.println("总版本数量: " + getVersions(filepath).size());
 
-            //String currentContent = new String(Files.readAllBytes(Paths.get(filepath)));
-            //System.out.println("当前文件内容: \n" + currentContent);
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("回滚操作失败: " + e.getMessage());
@@ -156,13 +168,11 @@ public class VersionManager {
 
     public boolean hasVersion(String filePath) {
         List<FileVersion> versions = getVersions(filePath);
-        if (!versions.isEmpty()) {
-            return true;
-        }
-        return false;
+        return !versions.isEmpty();
     }
 
     public void removeVersion(String filePath) {
         versionMap.remove(filePath);
+        currentVersionMap.remove(filePath); // 移除对应的当前版本号
     }
 }

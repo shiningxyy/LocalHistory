@@ -178,7 +178,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                     // 回滚按钮操作
                     if(Objects.equals(getCurrentFilePath(project), filePath)){
                         String rollbackVer=versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
-                        versionManageActivity.getVersionManager().addVersion(filePath,new FileVersion(fileName,filePath,rollbackVer));
+
                         refreshEditor(project,filePath);
                         JOptionPane.showMessageDialog(button,
                                 "文件已回滚到版本: " + versionNumber,
