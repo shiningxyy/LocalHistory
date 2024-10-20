@@ -22,11 +22,24 @@ public class GitCommandRunner {
 
             if (initExitCode == 0) {
                 System.out.println("Git repository initialized at: " + repoPath);
+
+                // 创建并切换到main分支
+                ProcessBuilder createMainBranch = new ProcessBuilder("git", "checkout", "-b", "main");
+                createMainBranch.directory(new File(repoPath));
+                Process createBranchProcess = createMainBranch.start();
+                int branchExitCode = createBranchProcess.waitFor();
+
+                if (branchExitCode == 0) {
+                    System.out.println("Main branch 'main' created and checked out.");
+                } else {
+                    System.out.println("Failed to create main branch.");
+                }
             } else {
                 System.out.println("Failed to initialize Git repository.");
             }
         }
     }
+
     public void createFineGrainedBranch(String repoPath, String baseBranch, String fineGrainedBranch) throws IOException, InterruptedException {
         // 切换到主分支
         ProcessBuilder checkoutBaseBranch = new ProcessBuilder("git", "checkout", baseBranch);
@@ -42,7 +55,7 @@ public class GitCommandRunner {
 
         System.out.println("Created and switched to fine-grained branch: " + fineGrainedBranch);
     }
-    public void commitFineGrainedChanges(String repoPath, String filePath, String commitMessage) throws IOException, InterruptedException {
+    public static void commitFineGrainedChanges(String repoPath, String filePath, String commitMessage) throws IOException, InterruptedException {
         // 添加文件到暂存区
         ProcessBuilder gitAdd = new ProcessBuilder("git", "add", filePath);
         gitAdd.directory(new File(repoPath));
