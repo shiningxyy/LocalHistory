@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import javax.swing.table.*;
 
 
@@ -177,12 +178,20 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                           //  JOptionPane.INFORMATION_MESSAGE);
                 } else if (label.equals("Rollback")) {
                     // 回滚按钮操作
-                   String rollbackVer=versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
-                   versionManageActivity.getVersionManager().addVersion(filePath,new FileVersion(fileName,filePath,rollbackVer));
-                   refreshEditor(project,filePath);
-                   JOptionPane.showMessageDialog(button,
-                          "文件已回滚到版本: " + versionNumber,
-                          "回滚操作成功", JOptionPane.INFORMATION_MESSAGE);
+                    if(Objects.equals(getCurrentFilePath(project), filePath)){
+                        String rollbackVer=versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
+                        versionManageActivity.getVersionManager().addVersion(filePath,new FileVersion(fileName,filePath,rollbackVer));
+                        refreshEditor(project,filePath);
+                        JOptionPane.showMessageDialog(button,
+                                "文件已回滚到版本: " + versionNumber,
+                                "回滚操作成功", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                    else{
+                        // 如果文件路径不同，弹出警告框
+                        JOptionPane.showMessageDialog(button,
+                                "你不能将这个文件回滚到当前文件上！",
+                                "回滚操作失败", JOptionPane.WARNING_MESSAGE);
+                    }
                 }
             }
 
@@ -232,6 +241,18 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+
+        public String getCurrentFilePath(Project project) {
+            // 获取当前打开的文件
+            VirtualFile[] openFiles = FileEditorManager.getInstance(project).getSelectedFiles();
+
+            if (openFiles.length > 0) {
+                VirtualFile currentFile = openFiles[0]; // 获取第一个打开的文件
+                return currentFile.getPath(); // 返回文件的路径
+            }
+
+            return null; // 如果没有打开的文件，返回null
         }
     }
 
