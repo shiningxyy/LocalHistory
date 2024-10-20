@@ -165,19 +165,15 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                 int versionNumber = (int) tableModel.getValueAt(row, 3); // 获取文件版本号
 
                 List<FileVersion> fileContent = versionManageActivity.getVersionManager().getVersions(filePath);
-                int currentNumber=fileContent.size();
+                int currentNumber=versionManageActivity.getVersionManager().getCurrentVersion(filePath);
                 // 区分操作列，处理不同的按钮点击事件
                 if (label.equals("View")) {
                     // 查看内容按钮操作
-                    versionManageActivity.getVersionManager().compareVersion(filePath, versionNumber-1,currentNumber-1);
-                  //  JOptionPane.showMessageDialog(button,
-                       //     fileContent.get(versionNumber - 1).getContent(),
-                           // "查看文件内容",
-                          //  JOptionPane.INFORMATION_MESSAGE);
+                    versionManageActivity.getVersionManager().compareVersion(filePath, versionNumber-1,currentNumber);
                 } else if (label.equals("Rollback")) {
                     // 回滚按钮操作
                     if(Objects.equals(getCurrentFilePath(project), filePath)){
-                        String rollbackVer=versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
+                        versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
 
                         refreshEditor(project,filePath);
                         JOptionPane.showMessageDialog(button,

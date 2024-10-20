@@ -148,9 +148,7 @@ public class VersionManageActivity implements StartupActivity {
     @Override
     public void runActivity(@NotNull Project project) {
         registerSaveListener(project); // Register the save listener
-        //MyFileDeleteListener listener = new MyFileDeleteListener();
-        //VirtualFileManager.getInstance().addVirtualFileListener(listener);
-        //registerBulkDeleteListener(project);
+        registerBulkDeleteListener(project);
     }
 
     //创建监听器监听保存动作
