@@ -30,7 +30,9 @@ public class FileVersion {
     public void setFilePath(String filePath) {
         this.filePath = filePath;
     }
-
+    public void setFileName(String filename) {
+        this.filename = filename;
+    }
     public String getContent() {
         return content;
     }
@@ -57,4 +59,6 @@ public class FileVersion {
                 ", timestamp=" + timestamp+
                 '}';
     }
+
+
 }

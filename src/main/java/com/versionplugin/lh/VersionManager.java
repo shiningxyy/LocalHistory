@@ -84,6 +84,19 @@ public class VersionManager {
         showCompareDialog(thisContent, currentContent);
     }
 
+    public void renameFileVersion(String oldFilePath, String newFilePath, String newFileName) {
+        if (versionMap.containsKey(oldFilePath)) {
+            List<FileVersion> versions = versionMap.get(oldFilePath);
+
+            for (FileVersion version : versions) {
+                version.setFilePath(newFilePath);
+                version.setFileName(newFileName);
+            }
+
+            versionMap.put(newFilePath, versions);
+            versionMap.remove(oldFilePath);
+        }
+    }
     // 创建对比窗口，带有高亮差异的功能
     private void showCompareDialog(String thisContent, String currentContent) {
         // 创建对话框

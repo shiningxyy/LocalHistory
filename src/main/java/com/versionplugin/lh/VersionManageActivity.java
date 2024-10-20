@@ -11,6 +11,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
+import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -149,6 +150,7 @@ public class VersionManageActivity implements StartupActivity {
     public void runActivity(@NotNull Project project) {
         registerSaveListener(project); // Register the save listener
         registerBulkDeleteListener(project);
+        registerBulkRenameListener(project);
     }
 
     //创建监听器监听保存动作
@@ -213,6 +215,43 @@ public class VersionManageActivity implements StartupActivity {
                                     String filePath = file.getPath();
                                     System.out.println("File deleted: " + filePath);
                                     // 在此处执行其他你想在文件删除后执行的操作
+                                }
+                            }
+                        }
+                    }
+                });
+    }
+    public void registerBulkRenameListener(Project project) {
+        ApplicationManager.getApplication().getMessageBus().connect(project)
+                .subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
+                    @Override
+                    public void before(@NotNull List<? extends VFileEvent> events) {
+
+                    }
+
+                    @Override
+                    public void after(@NotNull List<? extends VFileEvent> events) {
+                        for (VFileEvent event : events) {
+                            if (event instanceof VFilePropertyChangeEvent) {
+                                VFilePropertyChangeEvent propertyChangeEvent = (VFilePropertyChangeEvent) event;
+                                String propertyName = propertyChangeEvent.getPropertyName();
+
+                                // 检测是否为重命名事件
+                                if (VirtualFile.PROP_NAME.equals(propertyName)) {
+                                    VirtualFile file = propertyChangeEvent.getFile();
+                                    String oldFilePath = file.getParent().getPath() + "/" + propertyChangeEvent.getOldValue();
+                                    String newFilePath = file.getPath();
+                                    String newFileName = file.getName();
+
+                                    System.out.println("File renamed from: " + oldFilePath + " to: " + newFilePath);
+
+                                    // 更新版本管理中的路径和文件名
+                                    if (versionManager.hasVersion(oldFilePath)) {
+                                        versionManager.renameFileVersion(oldFilePath, newFilePath, newFileName);
+                                        System.out.println("Updated version manager for renamed file: " + newFilePath);
+                                    } else {
+                                        System.out.println("No versions found for file: " + oldFilePath);
+                                    }
                                 }
                             }
                         }
