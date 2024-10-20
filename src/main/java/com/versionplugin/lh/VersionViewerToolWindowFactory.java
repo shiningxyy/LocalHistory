@@ -114,8 +114,6 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         }
     }
 
-
-
     // 自定义渲染器：用于显示按钮
     class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {

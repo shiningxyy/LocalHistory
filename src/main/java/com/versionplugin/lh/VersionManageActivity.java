@@ -17,9 +17,10 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class VersionManageActivity implements StartupActivity {
-    private final VersionManager versionManager;
+    private static VersionManager versionManager;
 
     public VersionManageActivity() {
         this.versionManager = new VersionManager();
@@ -89,15 +90,8 @@ public class VersionManageActivity implements StartupActivity {
     }
     // 获取当前项目的所有文件路径
     public static List<String> getAllFilePaths(Project project) {
-        List<String> filePaths = new ArrayList<>();
-
-        // 获取项目的根目录
-        VirtualFile[] projectRoots = ProjectRootManager.getInstance(project).getContentRoots();
-
-        for (VirtualFile root : projectRoots) {
-            // 遍历项目根目录下的所有文件和文件夹
-            visitFilesPathRecursively(root, filePaths);
-        }
+        Set<String> keySet = versionManager.getFilenames();
+        List<String> filePaths = new ArrayList<>(keySet); // 将 Set 转换为 List
 
         return filePaths;
     }
