@@ -173,7 +173,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                 } else if (label.equals("Rollback")) {
                     // 回滚按钮操作
                     if(Objects.equals(getCurrentFilePath(project), filePath)){
-                        versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
+                        versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1,currentNumber);
 
                         refreshEditor(project,filePath);
                         JOptionPane.showMessageDialog(button,

@@ -50,10 +50,13 @@ public class VersionManager {
         return versionMap.keySet();
     }
 
-    public String rollbackVersion(String filepath, int number) {
+    public String rollbackVersion(String filepath, int number,int curnum) {
         List<FileVersion> versions = getVersions(filepath);
         FileVersion rollbackVer = versions.get(number);
         String rollbackCon = rollbackVer.getContent();
+
+        FileVersion curVer=versions.get(curnum);
+        String curCon=curVer.getContent();
 
         System.out.println("回滚内容：\n" + rollbackCon);
         try {
