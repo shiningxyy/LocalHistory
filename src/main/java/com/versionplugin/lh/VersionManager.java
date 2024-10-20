@@ -21,6 +21,7 @@ public class VersionManager {
         currentVersionMap = new HashMap<>(); // 初始化当前版本映射
     }
 
+
     // 初始化文件版本
     public void initializeFileVersion(String filename, String filePath, String initialContent) {
         FileVersion initialVersion = new FileVersion(filename, filePath, initialContent);
