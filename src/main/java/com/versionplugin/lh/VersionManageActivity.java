@@ -9,6 +9,7 @@ import com.intellij.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
+import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -183,26 +184,23 @@ public class VersionManageActivity implements StartupActivity {
                     @Override
                     public void before(@NotNull List<? extends VFileEvent> events) {
                         for (VFileEvent event : events) {
-                            if (event.isFromSave()) {
-                                // 跳过保存事件
-                                continue;
-                            }
+                            if (event instanceof VFileDeleteEvent) {
+                                VirtualFile file = event.getFile();
+                                if (file != null && event.isValid()) {
+                                    String filePath = file.getPath();
+                                    String fileName = file.getName();
 
-                            VirtualFile file = event.getFile();
-                            if (file != null && event.isValid()) {
-                                String filePath = file.getPath();
-                                String fileName = file.getName();
+                                    // 自定义删除前操作
+                                    System.out.println("File is being deleted: " + filePath);
 
-                                // 自定义删除前操作
-                                System.out.println("File is being deleted: " + filePath);
-
-                                // 你可以选择在文件删除之前保存版本或执行其他操作
-                                if (versionManager.hasVersion(filePath)) {
-                                    versionManager.removeVersion(filePath);
-                                    System.out.println("Removed versions for file: " + filePath);
-                                    System.out.println("文件名: " + fileName + ", 版本数量: " + versionManager.getVersions(filePath).size());
-                                } else {
-                                    System.out.println("No versions found for file: " + filePath);
+                                    // 你可以选择在文件删除之前保存版本或执行其他操作
+                                    if (versionManager.hasVersion(filePath)) {
+                                        versionManager.removeVersion(filePath);
+                                        System.out.println("Removed versions for file: " + filePath);
+                                        System.out.println("文件名: " + fileName + ", 版本数量: " + versionManager.getVersions(filePath).size());
+                                    } else {
+                                        System.out.println("No versions found for file: " + filePath);
+                                    }
                                 }
                             }
                         }
@@ -211,11 +209,13 @@ public class VersionManageActivity implements StartupActivity {
                     @Override
                     public void after(@NotNull List<? extends VFileEvent> events) {
                         for (VFileEvent event : events) {
-                            VirtualFile file = event.getFile();
-                            if (file != null && event.isValid()) {
-                                String filePath = file.getPath();
-                                System.out.println("File deleted: " + filePath);
-                                // 在此处执行其他你想在文件删除后执行的操作
+                            if (event instanceof VFileDeleteEvent) {
+                                VirtualFile file = event.getFile();
+                                if (file != null && event.isValid()) {
+                                    String filePath = file.getPath();
+                                    System.out.println("File deleted: " + filePath);
+                                    // 在此处执行其他你想在文件删除后执行的操作
+                                }
                             }
                         }
                     }
