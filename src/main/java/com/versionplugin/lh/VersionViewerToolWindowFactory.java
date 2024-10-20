@@ -36,7 +36,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         versionManageActivity.runActivity(project);
 
         // 创建版本表格
-        String[] columnNames = {"File Name", "Version Time", "File Path", "Action"};
+        String[] columnNames = {"File Name", "Version Time", "File Path", "Version Number","Action"};
         tableModel = new DefaultTableModel(columnNames, 0);
         versionTable = new JBTable(tableModel);
         versionTable.setFillsViewportHeight(true);
@@ -89,15 +89,17 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
             }
 
             System.out.println("文件路径: " + filePath + ", 版本数量: " + versions.size());
-
+            int index = 1;
             for (FileVersion version : versions) {
                 Object[] rowData = {
                         fileName,                        // 文件名
                         version.getTimestamp(),          // 版本时间
                         version.getFilePath(),           // 文件路径
+                        index,                           // 版本号
                         "View Content"                   // 按钮显示的文字
                 };
                 tableModel.addRow(rowData); // 添加到表格中
+                index++; // 递增版本号
             }
         }
     }
@@ -148,9 +150,12 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                 // 在此处处理按钮的点击事件
                 int row = versionTable.getSelectedRow();
                 String filePath = (String) tableModel.getValueAt(row, 2); // 获取文件路径
-                JOptionPane.showMessageDialog(button, "查看文件内容: " + filePath);
+                int versionNumber = (int) tableModel.getValueAt(row, 3); // 获取文件版本号
+                List<FileVersion> fileContent=versionManageActivity.getVersionManager().getVersions(filePath);
+                JOptionPane.showMessageDialog(button, "查看文件内容: " + fileContent.get(versionNumber-1).getContent());
                 // 在此处可以打开文件内容或执行其他操作
             }
+
             isPushed = false;
             return label;
         }
