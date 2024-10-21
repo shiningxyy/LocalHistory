@@ -11,13 +11,10 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
-import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class VersionManageActivity implements StartupActivity {
     private static VersionManager versionManager;
@@ -28,15 +25,18 @@ public class VersionManageActivity implements StartupActivity {
     }
 
     // 初始化文件版本
-    public void initializeFileVersions(Project project) {
+    public Map<String, List<FileVersion>> initializeFileVersions(Project project) {
         List<VirtualFile> files = getAllFiles(project); // 获取当前项目中的所有文件
         //System.out.println("文件列表: " + files);
-
+        Map<String, List<FileVersion>> verMap = new HashMap<>();
         for (VirtualFile file : files) {
             String fileName = file.getName(); // 获取文件名
             String filePath = file.getPath(); // 获取文件路径
             //System.out.println("文件名: " + fileName);
-
+            // 忽略 .json 文件和 .git 文件夹下的文件
+            if (fileName.endsWith(".json") || filePath.contains(".git")) {
+                continue; // 跳过当前文件，继续下一个文件
+            }
             // 获取文件内容
             String initialContent = "";
 
@@ -45,7 +45,11 @@ public class VersionManageActivity implements StartupActivity {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            versionManager.initializeFileVersion(fileName, filePath, initialContent); // 创建初始版本
+            ArrayList<Integer> versionNumbers = new ArrayList<>();
+            ArrayList<String> contents = new ArrayList<>();
+            ArrayList<FileVersion> initialVersions=versionManager.initializeFileVersion(fileName, filePath, initialContent,versionNumbers,contents); // 创建初始版本
+
+            verMap.put(filePath,initialVersions);
         }
         // 初始化Git仓库
         String baseBranch = "main";
@@ -68,7 +72,7 @@ public class VersionManageActivity implements StartupActivity {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
+        return verMap;
     }
 
     // 获取当前项目的所有文件名
@@ -193,7 +197,8 @@ public class VersionManageActivity implements StartupActivity {
                             // 保存版本
                             System.out.println("启用监听器");
                             String newContent = document.getText();
-                            versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
+                            int addvernum=versionManager.getCurrentVersion(filePath)+1;
+                            versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent,addvernum));
                             try {
                                 gitCommandRunner.commitFineGrainedChanges(project.getBasePath(), filePath, "filename: "+fileName+"filepath: "+filePath+"version time: "+versionManager.getLatestVersion(filePath).getTimestamp());//文件名，文件路径，版本号和版本时间
                             } catch (IOException e) {
@@ -245,43 +250,6 @@ public class VersionManageActivity implements StartupActivity {
                                     String filePath = file.getPath();
                                     System.out.println("File deleted: " + filePath);
                                     // 在此处执行其他你想在文件删除后执行的操作
-                                }
-                            }
-                        }
-                    }
-                });
-    }
-    public void registerBulkRenameListener(Project project) {
-        ApplicationManager.getApplication().getMessageBus().connect(project)
-                .subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
-                    @Override
-                    public void before(@NotNull List<? extends VFileEvent> events) {
-
-                    }
-
-                    @Override
-                    public void after(@NotNull List<? extends VFileEvent> events) {
-                        for (VFileEvent event : events) {
-                            if (event instanceof VFilePropertyChangeEvent) {
-                                VFilePropertyChangeEvent propertyChangeEvent = (VFilePropertyChangeEvent) event;
-                                String propertyName = propertyChangeEvent.getPropertyName();
-
-                                // 检测是否为重命名事件
-                                if (VirtualFile.PROP_NAME.equals(propertyName)) {
-                                    VirtualFile file = propertyChangeEvent.getFile();
-                                    String oldFilePath = file.getParent().getPath() + "/" + propertyChangeEvent.getOldValue();
-                                    String newFilePath = file.getPath();
-                                    String newFileName = file.getName();
-
-                                    System.out.println("File renamed from: " + oldFilePath + " to: " + newFilePath);
-
-                                    // 更新版本管理中的路径和文件名
-                                    if (versionManager.hasVersion(oldFilePath)) {
-                                        versionManager.renameFileVersion(oldFilePath, newFilePath, newFileName);
-                                        System.out.println("Updated version manager for renamed file: " + newFilePath);
-                                    } else {
-                                        System.out.println("No versions found for file: " + oldFilePath);
-                                    }
                                 }
                             }
                         }

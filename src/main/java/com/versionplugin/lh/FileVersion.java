@@ -7,15 +7,15 @@ public class FileVersion {
     private String filePath;         // 文件路径
     private String content;          // 文件内容
     private LocalDateTime timestamp; // 修改时间
-
-
-    public FileVersion(String filename,String filePath, String content) {
+    private int versionNum;
+    public FileVersion(String filename,String filePath, String content,int versionNum) {
         this.filename = filename;
         this.filePath = filePath;
         this.content = content;
+        this.versionNum=versionNum;
         this.timestamp = LocalDateTime.now(); // 设置为当前时间
-
     }
+
     public String getFilename() {
         return filename;
     }
@@ -48,6 +48,13 @@ public class FileVersion {
         this.timestamp = timestamp;
     }
 
+    public void setVersionNum(int VersionNum){
+        this.versionNum=versionNum;
+    }
+
+    public int getVersionNum(){
+        return versionNum;
+    }
 
     @Override
     public String toString() {

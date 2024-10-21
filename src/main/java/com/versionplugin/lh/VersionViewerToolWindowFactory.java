@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import javax.swing.table.*;
 
@@ -35,12 +36,12 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
     private JBTable versionTable;
     private DefaultTableModel tableModel;
     private VersionManageActivity versionManageActivity; // 使用 VersionManageActivity
-
+    private Map<String, List<FileVersion>> verMap;
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         // 初始化 VersionManageActivity
         versionManageActivity = new VersionManageActivity();
-        versionManageActivity.initializeFileVersions(project); // 初始化文件版本
+        verMap =versionManageActivity.initializeFileVersions(project);
         versionManageActivity.runActivity(project);
 
 
@@ -117,36 +118,43 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         // 清空现有表格数据
         tableModel.setRowCount(0);
 
-        // 获取当前项目中的所有文件名
+        // 获取当前项目中的所有文件路径
         List<String> files = VersionManageActivity.getAllFilePaths(project);
         System.out.println("文件列表: " + files);
 
         // 遍历每个文件，获取其版本并填充表格
         for (String filePath : files) {
+            // 忽略 .json 文件和 .git 文件夹下的文件
+            if (filePath.endsWith(".json") || filePath.contains(".git")) {
+                continue; // 跳过当前文件，继续下一个文件
+            }
+
             String fileName = new File(filePath).getName(); // 仅获取文件名
 
-            List<FileVersion> versions = versionManageActivity.getVersionManager().getVersions(filePath);
+            //List<FileVersion> versions = versionManageActivity.getVersionManager().getVersions(filePath);
+            List<FileVersion> versions =verMap.get(filePath);
             if (versions == null || versions.isEmpty()) {
                 System.out.println("未找到版本信息，文件名: " + fileName);
                 continue; // 跳过当前文件，继续下一个文件
             }
 
-            System.out.println("文件路径: " + filePath + ", 版本数量: " + versions.size());
-            int index = 1;
+           // System.out.println("文件路径: " + filePath + ", 版本数量: " + versions.size());
+            //int index = 1;
             for (FileVersion version : versions) {
                 Object[] rowData = {
                         fileName,                        // 文件名
                         version.getTimestamp(),          // 版本时间
                         version.getFilePath(),           // 文件路径
-                        index,                           // 版本号
-                        "View",                  // 查看内容按钮
-                        "Rollback"                      // 回滚按钮
+                        version.getVersionNum(),              // 版本号
+                        "View",                          // 查看内容按钮
+                        "Rollback"                       // 回滚按钮
                 };
                 tableModel.addRow(rowData); // 添加到表格中
-                index++; // 递增版本号
+                //index++; // 递增版本号
             }
         }
     }
+
 
     public String getCurrentFilePath(Project project) {
         // 获取当前打开的文件

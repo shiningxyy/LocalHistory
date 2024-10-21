@@ -1,20 +1,28 @@
 package com.versionplugin.lh;
 
+import com.google.gson.*;
+
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.List;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class VersionManager {
     // 存储文件名与其版本列表的映射
     private final Map<String, List<FileVersion>> versionMap;
     // 存储文件路径与当前版本号的映射
     private final Map<String, Integer> currentVersionMap;
+    private final Gson gson = new Gson(); // 用于处理JSON
 
     public VersionManager() {
         versionMap = new HashMap<>();
@@ -23,18 +31,134 @@ public class VersionManager {
 
 
     // 初始化文件版本
-    public void initializeFileVersion(String filename, String filePath, String initialContent) {
-        FileVersion initialVersion = new FileVersion(filename, filePath, initialContent);
-        addVersion(filePath, initialVersion); // 路径和版本map
-        currentVersionMap.put(filePath, 1); // 初始化版本号为1
-        System.out.println(initialVersion);
+    public ArrayList<FileVersion> initializeFileVersion(String filename, String filePath, String initialContent,
+                                                        ArrayList<Integer> versionNumbers, ArrayList<String> contents) {
+        String versionFilePath = filePath + "_version.json"; // 指定保存版本号的文件
+        int versionNumber;
+        ArrayList<FileVersion>fileVersionArrayList=new ArrayList<>();
+        // 读取版本信息文件
+        File versionFile = new File(versionFilePath);
+        if (versionFile.exists()) {
+            try (Reader reader = Files.newBufferedReader(Paths.get(versionFilePath))) {
+                JsonElement jsonElement = gson.fromJson(reader, JsonElement.class); // 先解析为 JsonElement
+
+                if (jsonElement.isJsonObject()) {
+                    // 处理 JsonObject 的情况
+                    JsonObject jsonObject = jsonElement.getAsJsonObject();
+                    versionNumber = jsonObject.get("version").getAsInt(); // 获取当前版本号
+                    String Content=jsonObject.get("content").getAsString();
+                    versionNumbers.add(versionNumber);
+                    contents.add(Content);
+                    // 生成版本信息
+                    FileVersion initialVersion = new FileVersion(filename, filePath, initialContent, versionNumber);
+                    // 保存当前版本信息
+                    //addVersion(filePath, initialVersion); // 路径和版本 map
+                    fileVersionArrayList.add(initialVersion);
+                    currentVersionMap.put(filePath, versionNumber); // 将当前版本号放入 map
+                }
+                else if (jsonElement.isJsonArray()) {
+                    // 处理 JsonArray 的情况
+                    JsonArray jsonArray = jsonElement.getAsJsonArray();
+                    boolean isFirstIteration = true; // 标记第一次循环
+
+                    for (JsonElement element : jsonArray) {
+                        JsonObject versionObject = element.getAsJsonObject();
+                        // 根据你的需求解析每个版本的内容，比如版本号和内容
+                        int arrayVersionNumber = versionObject.get("version").getAsInt();
+                        String arrayContent = versionObject.get("content").getAsString();
+
+                        versionNumbers.add(arrayVersionNumber);
+                        contents.add(arrayContent);
+
+                        FileVersion initialVersion = new FileVersion(filename, filePath, arrayContent, arrayVersionNumber);
+
+                        if (!isFirstIteration) {
+                            // 保存当前版本信息，跳过第一次循环
+                            addVersion(filePath, initialVersion); // 路径和版本 map
+                        }
+
+                        fileVersionArrayList.add(initialVersion);
+                        currentVersionMap.put(filePath, arrayVersionNumber); // 将当前版本号放入 map
+
+                        // 标记第一次循环已完成
+                        isFirstIteration = false;
+                    }
+
+                }
+                else {
+                    throw new RuntimeException("Unexpected JSON type in version file: " + versionFilePath);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("无法读取版本文件: " + versionFilePath, e);
+            }
+        }
+        else {
+            // 如果文件不存在，创建新版本文件
+            try {
+                Files.createFile(Paths.get(versionFilePath));
+            } catch (IOException e) {
+                throw new RuntimeException("无法创建版本文件: " + versionFilePath, e);
+            }
+            versionNumber = 1; // 默认初始版本号为1
+            // 生成版本信息
+            FileVersion initialVersion = new FileVersion(filename, filePath, initialContent, versionNumber);
+            // 保存当前版本信息
+            addVersion(filePath, initialVersion); // 路径和版本 map
+            fileVersionArrayList.add(initialVersion);
+            // 更新版本文件
+            //saveVersionToFile(versionFilePath, versionNumber, initialContent);
+            currentVersionMap.put(filePath, versionNumber); // 将当前版本号放入 map
+        }
+
+       // System.out.println(initialVersion);
+        return fileVersionArrayList;
     }
+
+
+    private void saveVersionToFile(String versionFilePath, int versionNumber, String content) {
+        JsonArray versionsArray = new JsonArray();
+
+        // 尝试读取现有文件内容
+        try {
+            String jsonString = Files.readString(Paths.get(versionFilePath));
+            JsonElement jsonElement = JsonParser.parseString(jsonString);
+
+            // 检查读取到的元素是否是JsonArray
+            if (jsonElement.isJsonArray()) {
+                versionsArray = jsonElement.getAsJsonArray();
+            }
+        } catch (IOException e) {
+            // 如果文件不存在或读取出错，可以选择继续
+        } catch (JsonSyntaxException e) {
+            // 如果解析出错，可能是文件格式不正确，清空数组以避免使用旧数据
+            versionsArray = new JsonArray();
+        }
+
+        // 创建新的版本对象并添加到数组
+        JsonObject newVersion = new JsonObject();
+        newVersion.addProperty("version", versionNumber);
+        newVersion.addProperty("content", content);
+        versionsArray.add(newVersion);
+
+        // 写回文件
+        try (Writer writer = Files.newBufferedWriter(Paths.get(versionFilePath))) {
+            gson.toJson(versionsArray, writer);
+        } catch (IOException e) {
+            throw new RuntimeException("无法保存版本文件: " + versionFilePath, e);
+        }
+    }
+
+
+
 
     // 添加新版本
     public void addVersion(String filepath, FileVersion fileVersion) {
         versionMap.computeIfAbsent(filepath, k -> new ArrayList<>()).add(fileVersion);
         // 更新当前版本号
         currentVersionMap.put(filepath, versionMap.get(filepath).size() ); // 设置为最新版本索引
+        int versionNum=fileVersion.getVersionNum();
+        String content=fileVersion.getContent();
+        saveVersionToFile(filepath+"_version.json",versionNum,content);
     }
 
     // 获取指定文件的所有版本
@@ -184,6 +308,7 @@ public class VersionManager {
         versionMap.remove(filePath);
         currentVersionMap.remove(filePath); // 移除对应的当前版本号
     }
+
     public void renameFileVersion(String oldFilePath, String newFilePath, String newFileName) {
         if (versionMap.containsKey(oldFilePath)) {
             List<FileVersion> versions = versionMap.get(oldFilePath);
