@@ -15,6 +15,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -28,23 +29,26 @@ public class VersionManageActivity implements StartupActivity {
 
     // 初始化文件版本
     public void initializeFileVersions(Project project) {
-        List<VirtualFile> files = getAllFiles(project); // 获取当前项目中的所有文件
-        //System.out.println("文件列表: " + files);
+        // 加载版本数据
+        versionManager.loadFromFile(Paths.get(project.getBasePath(), "version_data.ser").toString());
 
+        List<VirtualFile> files = getAllFiles(project); // 获取当前项目中的所有文件
         for (VirtualFile file : files) {
             String fileName = file.getName(); // 获取文件名
             String filePath = file.getPath(); // 获取文件路径
-            //System.out.println("文件名: " + fileName);
 
-            // 获取文件内容
-            String initialContent = "";
+            // 检查文件是否已经存在版本
+            if (!versionManager.hasVersion(filePath)) {
+                // 获取文件内容
+                String initialContent = "";
 
-            try {
-                initialContent = new String(file.contentsToByteArray()); // 使用 VirtualFile 获取文件内容
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                try {
+                    initialContent = new String(file.contentsToByteArray()); // 使用 VirtualFile 获取文件内容
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                versionManager.initializeFileVersion(fileName, filePath, initialContent); // 创建初始版本
             }
-            versionManager.initializeFileVersion(fileName, filePath, initialContent); // 创建初始版本
         }
     }
 
@@ -169,7 +173,8 @@ public class VersionManageActivity implements StartupActivity {
                             System.out.println("启用监听器");
                             String newContent = document.getText();
                             versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
-
+                            // 保存版本数据
+                            versionManager.saveToFile(Paths.get(project.getBasePath(), "version_data.ser").toString());
                         } else {
                             System.out.println("Unable to determine file path. Virtual file is null.");
                         }

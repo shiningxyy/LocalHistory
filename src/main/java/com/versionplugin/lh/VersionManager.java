@@ -3,7 +3,7 @@ package com.versionplugin.lh;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -187,6 +187,27 @@ public class VersionManager {
 
             versionMap.put(newFilePath, versions);
             versionMap.remove(oldFilePath);
+        }
+    }
+    public void saveToFile(String filePath) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+            oos.writeObject(versionMap);
+            oos.writeObject(currentVersionMap);
+            System.out.println("版本数据已保存到: " + filePath); // 添加调试信息
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadFromFile(String filePath) {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+            versionMap.clear();
+            currentVersionMap.clear();
+            versionMap.putAll((Map<String, List<FileVersion>>) ois.readObject());
+            currentVersionMap.putAll((Map<String, Integer>) ois.readObject());
+            System.out.println("版本数据已从: " + filePath + " 加载"); // 添加调试信息
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 }
