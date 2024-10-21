@@ -178,31 +178,32 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         public Object getCellEditorValue() {
             if (isPushed) {
                 int row = versionTable.getSelectedRow();
-                String fileName=(String) tableModel.getValueAt(row, 0);
+                String fileName = (String) tableModel.getValueAt(row, 0);
                 String filePath = (String) tableModel.getValueAt(row, 2); // 获取文件路径
                 int versionNumber = (int) tableModel.getValueAt(row, 3); // 获取文件版本号
 
                 List<FileVersion> fileContent = versionManageActivity.getVersionManager().getVersions(filePath);
-                int currentNumber=versionManageActivity.getVersionManager().getCurrentVersion(filePath);
+                int currentNumber = versionManageActivity.getVersionManager().getCurrentVersion(filePath);
                 // 区分操作列，处理不同的按钮点击事件
                 if (label.equals("View")) {
                     // 查看内容按钮操作
-                    versionManageActivity.getVersionManager().compareVersion(filePath, versionNumber-1,currentNumber-1);
+                    versionManageActivity.getVersionManager().compareVersion(filePath, versionNumber - 1, currentNumber - 1);
                 } else if (label.equals("Rollback")) {
                     // 回滚按钮操作
-                    if(Objects.equals(getCurrentFilePath(project), filePath)){
-                        versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber-1);
+                    if (Objects.equals(getCurrentFilePath(project), filePath)) {
+                        versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber - 1);
 
-                        refreshEditor(project,filePath);
+                        refreshEditor(project, filePath);
                         JOptionPane.showMessageDialog(button,
-                                "文件已回滚到版本: " + versionNumber,
-                                "回滚操作成功", JOptionPane.INFORMATION_MESSAGE);
-                    }
-                    else{
+                                "The file has been rolled back to version: " + versionNumber, // 文件已回滚到版本
+                                "Rollback operation successful", // 回滚操作成功
+                                JOptionPane.INFORMATION_MESSAGE);
+                    } else {
                         // 如果文件路径不同，弹出警告框
                         JOptionPane.showMessageDialog(button,
-                                "你不能将这个文件回滚到当前文件上！",
-                                "回滚操作失败", JOptionPane.WARNING_MESSAGE);
+                                "You cannot roll back this file to the current file!", // 你不能将这个文件回滚到当前文件上！
+                                "Rollback operation failed", // 回滚操作失败
+                                JOptionPane.WARNING_MESSAGE);
                     }
                 }
             }
