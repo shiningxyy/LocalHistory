@@ -28,8 +28,6 @@ import java.util.Objects;
 import javax.swing.table.*;
 
 
-
-
 public class VersionViewerToolWindowFactory implements ToolWindowFactory {
 
     private JBTable versionTable;
@@ -42,8 +40,6 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         versionManageActivity = new VersionManageActivity();
         versionManageActivity.initializeFileVersions(project); // 初始化文件版本
         versionManageActivity.runActivity(project);
-
-
 
         // 创建版本表格
         String[] columnNames = {"File Name", "Version Time", "File Path", "Version Number", "View Content", "Rollback"};
@@ -66,22 +62,10 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         commitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String currentFilePath =getCurrentFilePath(project);
-                if (currentFilePath != null) {
-                    // 弹出对话框让用户输入提交信息
-                    String commitMessage = JOptionPane.showInputDialog(null, "Enter commit message:", "Commit Changes", JOptionPane.PLAIN_MESSAGE);
-                    if (commitMessage != null && !commitMessage.trim().isEmpty()) {
-                        try {
-                            versionManageActivity.getGitCommandRunner().squashAndMergeFineGrainedCommits(project.getBasePath(),"main", "fine-grained-branch", commitMessage);
-                            JOptionPane.showMessageDialog(null, "Commit successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                        } catch (IOException | InterruptedException ex) {
-                            ex.printStackTrace();
-                            JOptionPane.showMessageDialog(null, "Commit failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                        }
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(null, "No file is currently open.", "Warning", JOptionPane.WARNING_MESSAGE);
-                }
+                // 在此处实现提交的逻辑
+                // 例如，可以调用版本管理的提交方法
+                System.out.println("Committing changes...");
+                // TODO: 添加具体的提交逻辑
             }
         });
 
@@ -110,7 +94,6 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         versionTable.getColumn("Rollback").setCellRenderer(new ButtonRenderer());
         versionTable.getColumn("Rollback").setCellEditor(new ButtonEditor(new JCheckBox(), project));
     }
-
 
     // 刷新表格内容
     private void refreshTable(Project project) {
@@ -146,18 +129,6 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                 index++; // 递增版本号
             }
         }
-    }
-
-    public String getCurrentFilePath(Project project) {
-        // 获取当前打开的文件
-        VirtualFile[] openFiles = FileEditorManager.getInstance(project).getSelectedFiles();
-
-        if (openFiles.length > 0) {
-            VirtualFile currentFile = openFiles[0]; // 获取第一个打开的文件
-            return currentFile.getPath(); // 返回文件的路径
-        }
-
-        return null; // 如果没有打开的文件，返回null
     }
 
     // 自定义渲染器：用于显示按钮
@@ -282,7 +253,17 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
             }
 
         }
+        public String getCurrentFilePath(Project project) {
+            // 获取当前打开的文件
+            VirtualFile[] openFiles = FileEditorManager.getInstance(project).getSelectedFiles();
 
+            if (openFiles.length > 0) {
+                VirtualFile currentFile = openFiles[0]; // 获取第一个打开的文件
+                return currentFile.getPath(); // 返回文件的路径
+            }
+
+            return null; // 如果没有打开的文件，返回null
+        }
     }
 
 }

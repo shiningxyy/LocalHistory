@@ -41,14 +41,6 @@ public class VersionManager {
     public List<FileVersion> getVersions(String filepath) {
         return versionMap.getOrDefault(filepath, new ArrayList<>());
     }
-    public FileVersion getLatestVersion(String filePath) {
-        List<FileVersion> versions = getVersions(filePath);
-        if (!versions.isEmpty()) {
-            return versions.get(versions.size() - 1); // 获取最后一个版本，作为最新版本
-        } else {
-            return null; // 如果没有版本，则返回null
-        }
-    }
 
     public int getCurrentVersion(String filepath) {
         return currentVersionMap.getOrDefault(filepath, -1); // 返回当前版本号，未找到返回-1

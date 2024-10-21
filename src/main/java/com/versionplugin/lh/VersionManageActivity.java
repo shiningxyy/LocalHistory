@@ -20,10 +20,9 @@ import java.util.Set;
 
 public class VersionManageActivity implements StartupActivity {
     private static VersionManager versionManager;
-    private static GitCommandRunner gitCommandRunner; // 使用 GitCommandRunner
+
     public VersionManageActivity() {
         this.versionManager = new VersionManager();
-        this.gitCommandRunner = new GitCommandRunner();
     }
 
     // 初始化文件版本
@@ -46,28 +45,6 @@ public class VersionManageActivity implements StartupActivity {
             }
             versionManager.initializeFileVersion(fileName, filePath, initialContent); // 创建初始版本
         }
-        // 初始化Git仓库
-        String baseBranch = "main";
-        String fineGrainedBranch = "fine-grained-branch";
-        String repoPath = project.getBasePath();
-
-        try {
-            gitCommandRunner.initializeGitRepo(repoPath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        // 创建细粒度更改分支
-        try {
-            gitCommandRunner.createFineGrainedBranch(repoPath, baseBranch, fineGrainedBranch);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
     }
 
     // 获取当前项目的所有文件名
@@ -163,9 +140,7 @@ public class VersionManageActivity implements StartupActivity {
             }
         }
     }
-    public GitCommandRunner getGitCommandRunner() {
-        return gitCommandRunner;
-    }
+
     public VersionManager getVersionManager() {
         return versionManager;
     }
@@ -193,13 +168,7 @@ public class VersionManageActivity implements StartupActivity {
                             System.out.println("启用监听器");
                             String newContent = document.getText();
                             versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
-                            try {
-                                gitCommandRunner.commitFineGrainedChanges(project.getBasePath(), filePath, "filename: "+fileName+"filepath: "+filePath+"version time: "+versionManager.getLatestVersion(filePath).getTimestamp());//文件名，文件路径，版本号和版本时间
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
+
                         } else {
                             System.out.println("Unable to determine file path. Virtual file is null.");
                         }
