@@ -19,7 +19,8 @@ public class FileVersion {
     public String getFilename() {
         return filename;
     }
-    public void setFilename(String filename) {
+
+    public void setFileName(String filename) {
         this.filename = filename;
     }
 
