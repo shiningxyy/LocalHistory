@@ -184,4 +184,17 @@ public class VersionManager {
         versionMap.remove(filePath);
         currentVersionMap.remove(filePath); // 移除对应的当前版本号
     }
+    public void renameFileVersion(String oldFilePath, String newFilePath, String newFileName) {
+        if (versionMap.containsKey(oldFilePath)) {
+            List<FileVersion> versions = versionMap.get(oldFilePath);
+
+            for (FileVersion version : versions) {
+                version.setFilePath(newFilePath);
+                version.setFileName(newFileName);
+            }
+
+            versionMap.put(newFilePath, versions);
+            versionMap.remove(oldFilePath);
+        }
+    }
 }
