@@ -36,7 +36,9 @@ public class VersionManageActivity implements StartupActivity {
         for (VirtualFile file : files) {
             String fileName = file.getName(); // 获取文件名
             String filePath = file.getPath(); // 获取文件路径
-
+            if (fileName.startsWith(".") || filePath.contains(".git")) {
+                continue; // 跳过当前文件，继续下一个文件
+            }
             // 检查文件是否已经存在版本
             if (!versionManager.hasVersion(filePath)) {
                 // 获取文件内容

@@ -107,7 +107,9 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         // 遍历每个文件，获取其版本并填充表格
         for (String filePath : files) {
             String fileName = new File(filePath).getName(); // 仅获取文件名
-
+            if (fileName.startsWith(".") || filePath.contains(".git")) {
+                continue; // 跳过当前文件，继续下一个文件
+            }
             List<FileVersion> versions = versionManageActivity.getVersionManager().getVersions(filePath);
             if (versions == null || versions.isEmpty()) {
                 System.out.println("未找到版本信息，文件名: " + fileName);
