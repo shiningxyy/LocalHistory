@@ -123,6 +123,10 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
 
         // 遍历每个文件，获取其版本并填充表格
         for (String filePath : files) {
+            // 忽略 .json 文件和 .git 文件夹下的文件
+            if (filePath.endsWith(".json") || filePath.contains(".git")) {
+                continue; // 跳过当前文件，继续下一个文件
+            }
             String fileName = new File(filePath).getName(); // 仅获取文件名
 
             List<FileVersion> versions = versionManageActivity.getVersionManager().getVersions(filePath);

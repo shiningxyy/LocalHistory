@@ -36,7 +36,10 @@ public class VersionManageActivity implements StartupActivity {
             String fileName = file.getName(); // 获取文件名
             String filePath = file.getPath(); // 获取文件路径
             //System.out.println("文件名: " + fileName);
-
+            // 忽略 .json 文件和 .git 文件夹下的文件
+            if (filePath.endsWith(".json") || filePath.contains(".git")) {
+                continue; // 跳过当前文件，继续下一个文件
+            }
             // 获取文件内容
             String initialContent = "";
 
