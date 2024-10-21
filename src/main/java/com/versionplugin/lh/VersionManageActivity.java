@@ -61,6 +61,7 @@ public class VersionManageActivity implements StartupActivity {
         }
 
         // 创建细粒度更改分支
+
         try {
             gitCommandRunner.createFineGrainedBranch(repoPath, baseBranch, fineGrainedBranch);
         } catch (IOException e) {
