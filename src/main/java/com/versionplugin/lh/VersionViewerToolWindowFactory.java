@@ -73,7 +73,6 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                     if (commitMessage != null && !commitMessage.trim().isEmpty()) {
                         try {
                             versionManageActivity.getGitCommandRunner().squashAndMergeFineGrainedCommits(project.getBasePath(),"main", "fine-grained-branch", commitMessage);
-                            JOptionPane.showMessageDialog(null, "Commit successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
                         } catch (IOException | InterruptedException ex) {
                             ex.printStackTrace();
                             JOptionPane.showMessageDialog(null, "Commit failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
