@@ -1,14 +1,12 @@
 package com.versionplugin.lh;
 
-import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-
 public class GitCommandRunner {
-    public void initializeGitRepo(String repoPath,String baseBranch, String fineGrainedBranch) throws IOException, InterruptedException {
+    public void initializeGitRepo(String repoPath) throws IOException, InterruptedException {
         // 检查是否已经是一个Git仓库
 
         ProcessBuilder checkGitRepo = new ProcessBuilder("git", "rev-parse", "--is-inside-work-tree");
@@ -27,7 +25,7 @@ public class GitCommandRunner {
                 System.out.println("Git repository initialized at: " + repoPath);
 
                 // 创建并切换到main分支
-                ProcessBuilder createMainBranch = new ProcessBuilder("git", "checkout", "-b", baseBranch);
+                ProcessBuilder createMainBranch = new ProcessBuilder("git", "checkout", "-b", "main");
                 createMainBranch.directory(new File(repoPath));
                 createMainBranch.start().waitFor();
 
@@ -45,7 +43,7 @@ public class GitCommandRunner {
                 addFile.start().waitFor();
 
                 // 提交README文件
-                ProcessBuilder commitFile = new ProcessBuilder("git", "commit", "-m", "初始化git");
+                ProcessBuilder commitFile = new ProcessBuilder("git", "commit", "-m", "初始化仓库");
                 commitFile.directory(new File(repoPath));
                 int branchExitCode =commitFile.start().waitFor();
 
@@ -57,15 +55,6 @@ public class GitCommandRunner {
             } else {
                 System.out.println("Failed to initialize Git repository.");
             }
-            // 创建细粒度更改分支
-
-            try {
-                createFineGrainedBranch(repoPath, baseBranch, fineGrainedBranch);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 
@@ -75,41 +64,23 @@ public class GitCommandRunner {
         ProcessBuilder checkoutBaseBranch = new ProcessBuilder("git", "checkout", baseBranch);
         checkoutBaseBranch.directory(new File(repoPath));
         Process checkoutBaseProcess = checkoutBaseBranch.start();
-        if(checkoutBaseProcess.waitFor()==0){
-            System.out.println("切换主分支成功");
-        }else{
-            System.out.println("切换主分支失败");
-
-        }
+        checkoutBaseProcess.waitFor();
 
         // 创建并切换到新的细粒度分支
         ProcessBuilder createBranch = new ProcessBuilder("git", "checkout", "-b", fineGrainedBranch);
         createBranch.directory(new File(repoPath));
         Process createBranchProcess = createBranch.start();
-        if(createBranchProcess.waitFor()==0){
-            System.out.println("创建细粒度分支成功");
-        }else{
-            System.out.println("创建细粒度分支失败");
-
-        }
+        createBranchProcess.waitFor();
 
         ProcessBuilder addFile = new ProcessBuilder("git", "add", ".");
         addFile.directory(new File(repoPath));
-        if(addFile.start().waitFor()==0){
-            System.out.println("暂缓成功");
-        }else{
-            System.out.println("暂缓失败");
+        addFile.start().waitFor();
 
-        }
-
-        ProcessBuilder commitFile = new ProcessBuilder("git", "commit", "-m", "初始化git");
+        // 提交README文件
+        ProcessBuilder commitFile = new ProcessBuilder("git", "commit", "-m", "初始化仓库");
         commitFile.directory(new File(repoPath));
         int branchExitCode =commitFile.start().waitFor();
-        if (branchExitCode == 0) {
-            System.out.println("Main branch 'fineGrainedBranch' created and checked out.");
-        } else {
-            System.out.println("Failed to create fineGrainedBranch branch.");
-        }
+        System.out.println("Created and switched to fine-grained branch: " + fineGrainedBranch);
     }
 
     public static boolean isOnFineGrainedBranch(String repoPath) throws IOException, InterruptedException {
@@ -125,87 +96,65 @@ public class GitCommandRunner {
 
         return "fine-grained-branch".equals(currentBranch);
     }
-    public static void commitFineGrainedChanges(String repoPath, String filePath, String fineGrainedBranch,String commitMessage) throws IOException, InterruptedException {
+    public static void commitFineGrainedChanges(String repoPath, String filePath, String commitMessage) throws IOException, InterruptedException {
         // 添加文件到暂存区
+        if(!isOnFineGrainedBranch(repoPath)){
+            // 添加文件到暂存区
+            ProcessBuilder gitAdd = new ProcessBuilder("git", "add", ".");
+            gitAdd.directory(new File(repoPath));
+            gitAdd.start().waitFor();
 
+            // 提交更改
+            ProcessBuilder beforeGitCommit = new ProcessBuilder("git", "commit", "-m", commitMessage);
+            beforeGitCommit.directory(new File(repoPath));
+            beforeGitCommit.start().waitFor();
+            ProcessBuilder changeBranch = new ProcessBuilder("git", "checkout", "-m", "fine-grained-branch");
+            changeBranch.directory(new File(repoPath));
+            changeBranch.start().waitFor();
+        }
         ProcessBuilder gitAdd = new ProcessBuilder("git", "add", filePath);
         gitAdd.directory(new File(repoPath));
         Process gitAddProcess = gitAdd.start();
-        if(gitAddProcess.waitFor()==0){
-            System.out.println("添加文件到暂存区");
-
-        }
-        ProcessBuilder gitStatus = new ProcessBuilder("git", "status");
-        gitStatus.directory(new File(repoPath));
-        Process gitStatusProcess = gitStatus.start();
-        BufferedReader statusReader = new BufferedReader(new InputStreamReader(gitStatusProcess.getInputStream()));
-        String line;
-        while ((line = statusReader.readLine()) != null) {
-            System.out.println(line);
-        }
-        gitStatusProcess.waitFor();
+        gitAddProcess.waitFor();
 
         // 提交更改
         ProcessBuilder gitCommit = new ProcessBuilder("git", "commit", "-m", commitMessage);
         gitCommit.directory(new File(repoPath));
         Process gitCommitProcess = gitCommit.start();
-        if(gitCommitProcess.waitFor()==0)
-        {
-            System.out.println("提交更改");
+        gitCommitProcess.waitFor();
 
-        }
-        ProcessBuilder aftergitStatus = new ProcessBuilder("git", "status");
-        aftergitStatus.directory(new File(repoPath));
-        Process aftergitStatusProcess = aftergitStatus.start();
-        BufferedReader afterstatusReader = new BufferedReader(new InputStreamReader(aftergitStatusProcess.getInputStream()));
-        String afterline;
-        while ((afterline = afterstatusReader.readLine()) != null) {
-            System.out.println(afterline); // 打印 git status 的输出，检查是否有文件被添加
-        }
-        aftergitStatusProcess.waitFor();
-
+        System.out.println("Committed fine-grained change: " + commitMessage);
     }
     public void squashAndMergeFineGrainedCommits(String repoPath, String baseBranch, String fineGrainedBranch, String finalCommitMessage) throws IOException, InterruptedException {
-        ProcessBuilder gitStatus = new ProcessBuilder("git", "status");
-        gitStatus.directory(new File(repoPath));
-        Process gitStatusProcess = gitStatus.start();
-        BufferedReader statusReader = new BufferedReader(new InputStreamReader(gitStatusProcess.getInputStream()));
-        String line;
-        while ((line = statusReader.readLine()) != null) {
-            System.out.println(line); // 打印 git status 的输出，检查是否有文件被添加
-        }
-        gitStatusProcess.waitFor();
+
+        // 添加文件到暂存区
+        ProcessBuilder gitAdd = new ProcessBuilder("git", "add", ".");
+        gitAdd.directory(new File(repoPath));
+        gitAdd.start().waitFor();
+
+        // 提交更改
+        ProcessBuilder beforeGitCommit = new ProcessBuilder("git", "commit", "-m", finalCommitMessage);
+        beforeGitCommit.directory(new File(repoPath));
+        beforeGitCommit.start().waitFor();
         // 切换到主分支
         ProcessBuilder checkoutBaseBranch = new ProcessBuilder("git", "checkout", baseBranch);
         checkoutBaseBranch.directory(new File(repoPath));
         Process checkoutBaseProcess = checkoutBaseBranch.start();
-        if(checkoutBaseProcess.waitFor()==0) {
-            System.out.println("切换成功");
+        checkoutBaseProcess.waitFor();
 
-        } else{
-            System.out.println("切换失败");
-        }
         // 合并细粒度分支为一个提交
         ProcessBuilder mergeBranch = new ProcessBuilder("git", "merge", "--squash", fineGrainedBranch);
         mergeBranch.directory(new File(repoPath));
         Process mergeBranchProcess = mergeBranch.start();
-        if(mergeBranchProcess.waitFor()==0){
-            System.out.println("合并成功");
+        mergeBranchProcess.waitFor();
 
-            // 提交合并后的更改
-            ProcessBuilder gitCommit = new ProcessBuilder("git", "commit", "-m", finalCommitMessage);
-            gitCommit.directory(new File(repoPath));
-            Process gitCommitProcess = gitCommit.start();
-            if(gitCommitProcess.waitFor()==0){
-                System.out.println("提交成功");
-                JOptionPane.showMessageDialog(null, "Commit successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            }else{
-                System.out.println("提交失败");
-            }
+        // 提交合并后的更改
+        ProcessBuilder gitCommit = new ProcessBuilder("git", "commit", "-m", finalCommitMessage);
+        gitCommit.directory(new File(repoPath));
+        Process gitCommitProcess = gitCommit.start();
+        gitCommitProcess.waitFor();
 
-        }else{
-            JOptionPane.showMessageDialog(null, "合并时发生冲突，请手动解决冲突，然后保存文件！", "Success", JOptionPane.INFORMATION_MESSAGE);
-        }
+        System.out.println("Squashed and merged changes from " + fineGrainedBranch + " to " + baseBranch);
     }
 
     /*public void executeFineGrainedCommitMechanism(String repoPath, String filePath, List<String> fineGrainedMessages) throws IOException, InterruptedException {
