@@ -11,33 +11,33 @@ import java.util.*;
 import java.util.List;
 
 public class VersionManager {
-    // 存储文件名与其版本列表的映射
+    //存储文件名与其版本列表的映射
     private final Map<String, List<FileVersion>> versionMap;
-    // 存储文件路径与当前版本号的映射
+    //存储文件路径与当前版本号的映射
     private final Map<String, Integer> currentVersionMap;
 
     public VersionManager() {
         versionMap = new HashMap<>();
-        currentVersionMap = new HashMap<>(); // 初始化当前版本映射
+        currentVersionMap = new HashMap<>(); //初始化当前版本映射
     }
 
 
-    // 初始化文件版本
+    //初始化文件版本
     public void initializeFileVersion(String filename, String filePath, String initialContent) {
         FileVersion initialVersion = new FileVersion(filename, filePath, initialContent);
-        addVersion(filePath, initialVersion); // 路径和版本map
-        currentVersionMap.put(filePath, 1); // 初始化版本号为1
+        addVersion(filePath, initialVersion); //路径和版本map
+        currentVersionMap.put(filePath, 1); //初始化版本号为1
         System.out.println(initialVersion);
     }
 
-    // 添加新版本
+    //添加新版本
     public void addVersion(String filepath, FileVersion fileVersion) {
         versionMap.computeIfAbsent(filepath, k -> new ArrayList<>()).add(fileVersion);
-        // 更新当前版本号
-        currentVersionMap.put(filepath, versionMap.get(filepath).size() ); // 设置为最新版本索引
+        //更新当前版本号
+        currentVersionMap.put(filepath, versionMap.get(filepath).size() ); //设置为最新版本索引
     }
 
-    // 获取指定文件的所有版本
+    //获取指定文件的所有版本
     public List<FileVersion> getVersions(String filepath) {
         return versionMap.getOrDefault(filepath, new ArrayList<>());
     }
@@ -45,14 +45,16 @@ public class VersionManager {
     public int getCurrentVersion(String filepath) {
         return currentVersionMap.getOrDefault(filepath, -1); // 返回当前版本号，未找到返回-1
     }
+
     public FileVersion getLatestVersion(String filePath) {
         List<FileVersion> versions = getVersions(filePath);
         if (!versions.isEmpty()) {
-            return versions.get(versions.size() - 1); // 获取最后一个版本，作为最新版本
+            return versions.get(versions.size() - 1); //获取最后一个版本，作为最新版本
         } else {
-            return null; // 如果没有版本，则返回null
+            return null; //如果没有版本，则返回null
         }
     }
+
     public Set<String> getFilenames() {
         return versionMap.keySet();
     }
@@ -80,67 +82,67 @@ public class VersionManager {
     }
 
     public void compareVersion(String filepath, int thisNum, int currentNum) {
-        // 获取版本内容
+        //获取版本内容
         List<FileVersion> versions = getVersions(filepath);
         FileVersion thisVer = versions.get(thisNum);
         FileVersion currentVer = versions.get(currentNum);
         String thisContent = thisVer.getContent();
         String currentContent = currentVer.getContent();
 
-        // 调用方法创建并显示对比窗口
+        //调用方法创建并显示对比窗口
         showCompareDialog(thisContent, currentContent);
     }
 
-    // 创建对比窗口，带有高亮差异的功能
+    //创建对比窗口，带有高亮差异的功能
     private void showCompareDialog(String thisContent, String currentContent) {
-        // 创建对话框
+        //创建对话框
         JDialog dialog = new JDialog();
         dialog.setTitle("Version comparison (left side shows the historical version, right side shows the current version)");
-        dialog.setSize(800, 600); // 设置窗口大小
-        dialog.setLocationRelativeTo(null); // 居中显示
+        dialog.setSize(800, 600); //设置窗口大小
+        dialog.setLocationRelativeTo(null); //居中显示
 
-        // 创建左边的 JTextPane 显示 thisContent
+        //左边显示thisContent
         JTextPane leftTextPane = createTextPaneWithDiff(thisContent, currentContent, true);
         JScrollPane leftScrollPane = new JScrollPane(leftTextPane);
 
-        // 创建右边的 JTextPane 显示 currentContent
+        //右边显示currentContent
         JTextPane rightTextPane = createTextPaneWithDiff(thisContent, currentContent, false);
         JScrollPane rightScrollPane = new JScrollPane(rightTextPane);
 
-        // 创建水平分割面板，将两个滚动面板放入
+        // 创建水平分割面板
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftScrollPane, rightScrollPane);
-        splitPane.setDividerLocation(400); // 设置分割条位置
-        splitPane.setResizeWeight(0.5); // 使两边均分窗口空间
+        splitPane.setDividerLocation(400); //设置分割条位置
+        splitPane.setResizeWeight(0.5); //使两边均分窗口空间
 
-        // 将分割面板添加到对话框中
+        //将分割面板添加到对话框中
         dialog.add(splitPane);
 
-        // 显示对话框
+        //显示对话框
         dialog.setVisible(true);
     }
 
-    // 创建 JTextPane 并高亮显示差异
+    //高亮显示差异
     private JTextPane createTextPaneWithDiff(String thisContent, String currentContent, boolean isLeft) {
         JTextPane textPane = new JTextPane();
-        textPane.setEditable(false); // 设置不可编辑
+        textPane.setEditable(false); //设置不可编辑
         StyledDocument doc = textPane.getStyledDocument();
 
-        // 样式设置
+        //样式设置
         Style defaultStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
 
-        // 样式：相同行（白色字体）
+        //样式：相同行（白色字体）
         Style sameStyle = doc.addStyle("Same", defaultStyle);
         StyleConstants.setForeground(sameStyle, Color.WHITE);
 
-        // 样式：左侧不同内容（红色字体）
+        //样式：左侧不同内容（红色字体）
         Style diffLeftStyle = doc.addStyle("DiffLeft", defaultStyle);
         StyleConstants.setForeground(diffLeftStyle, Color.RED);
 
-        // 样式：右侧不同内容（绿色字体）
+        //样式：右侧不同内容（绿色字体）
         Style diffRightStyle = doc.addStyle("DiffRight", defaultStyle);
         StyleConstants.setForeground(diffRightStyle, Color.GREEN);
 
-        // 按行拆分并逐行比较
+        //按行拆分并逐行比较
         String[] thisLines = thisContent.split("\n");
         String[] currentLines = currentContent.split("\n");
         int maxLines = Math.max(thisLines.length, currentLines.length);
@@ -150,20 +152,20 @@ public class VersionManager {
             String currentLine = i < currentLines.length ? currentLines[i] : "";
 
             try {
-                // 左侧文本: 显示 thisContent
+                //左侧显示thisContent
                 if (isLeft) {
                     if (thisLine.equals(currentLine)) {
-                        doc.insertString(doc.getLength(), thisLine + "\n", sameStyle); // 相同行：白色
+                        doc.insertString(doc.getLength(), thisLine + "\n", sameStyle); //相同行：白色
                     } else {
-                        doc.insertString(doc.getLength(), thisLine + "\n", diffLeftStyle); // 左侧不同内容：红色
+                        doc.insertString(doc.getLength(), thisLine + "\n", diffLeftStyle); //左侧不同内容：红色
                     }
                 }
-                // 右侧文本: 显示 currentContent
+                //右侧显示currentContent
                 else {
                     if (thisLine.equals(currentLine)) {
-                        doc.insertString(doc.getLength(), currentLine + "\n", sameStyle); // 相同行：白色
+                        doc.insertString(doc.getLength(), currentLine + "\n", sameStyle); //相同行：白色
                     } else {
-                        doc.insertString(doc.getLength(), currentLine + "\n", diffRightStyle); // 右侧不同内容：绿色
+                        doc.insertString(doc.getLength(), currentLine + "\n", diffRightStyle); //右侧不同内容：绿色
                     }
                 }
             } catch (BadLocationException e) {
@@ -181,7 +183,7 @@ public class VersionManager {
 
     public void removeVersion(String filePath) {
         versionMap.remove(filePath);
-        currentVersionMap.remove(filePath); // 移除对应的当前版本号
+        currentVersionMap.remove(filePath); //移除对应的当前版本号
     }
     public void renameFileVersion(String oldFilePath, String newFilePath, String newFileName) {
         if (versionMap.containsKey(oldFilePath)) {
@@ -200,7 +202,7 @@ public class VersionManager {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
             oos.writeObject(versionMap);
             oos.writeObject(currentVersionMap);
-            System.out.println("版本数据已保存到: " + filePath); // 添加调试信息
+            System.out.println("版本数据已保存到: " + filePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -212,7 +214,7 @@ public class VersionManager {
             currentVersionMap.clear();
             versionMap.putAll((Map<String, List<FileVersion>>) ois.readObject());
             currentVersionMap.putAll((Map<String, Integer>) ois.readObject());
-            System.out.println("版本数据已从: " + filePath + " 加载"); // 添加调试信息
+            System.out.println("版本数据已从: " + filePath + " 加载");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

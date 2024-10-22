@@ -25,38 +25,41 @@ import java.util.Set;
 
 public class VersionManageActivity implements StartupActivity {
     private static VersionManager versionManager;
-    private static GitCommandRunner gitCommandRunner; // 使用 GitCommandRunner
+    private static GitCommandRunner gitCommandRunner; //使用GitCommandRunner
     public VersionManageActivity() {
         this.versionManager = new VersionManager();
         this.gitCommandRunner = new GitCommandRunner();
     }
 
-    // 初始化文件版本
+    //初始化文件版本
     public void initializeFileVersions(Project project) {
-        // 加载版本数据
-        versionManager.loadFromFile(Paths.get(project.getBasePath(), "version_data.ser").toString());
 
-        List<VirtualFile> files = getAllFiles(project); // 获取当前项目中的所有文件
+        //加载版本数据
+        versionManager.loadFromFile(Paths.get(project.getBasePath(), "version_data.ser").toString());
+        List<VirtualFile> files = getAllFiles(project); //获取当前项目中的所有文件
         for (VirtualFile file : files) {
-            String fileName = file.getName(); // 获取文件名
-            String filePath = file.getPath(); // 获取文件路径
+            String fileName = file.getName();
+            String filePath = file.getPath();
             if (fileName.startsWith(".") || filePath.contains(".git")) {
-                continue; // 跳过当前文件，继续下一个文件
+                continue;
             }
-            // 检查文件是否已经存在版本
+
+            //检查文件是否已经存在版本
             if (!versionManager.hasVersion(filePath)) {
-                // 获取文件内容
+
+                //获取文件内容
                 String initialContent = "";
 
                 try {
-                    initialContent = new String(file.contentsToByteArray()); // 使用 VirtualFile 获取文件内容
+                    initialContent = new String(file.contentsToByteArray()); //使用VirtualFile获取文件内容
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                versionManager.initializeFileVersion(fileName, filePath, initialContent); // 创建初始版本
+                versionManager.initializeFileVersion(fileName, filePath, initialContent); //创建初始版本
             }
         }
-        // 初始化Git仓库
+
+        //初始化git仓库
         String baseBranch = "main";
         String fineGrainedBranch = "fine-grained-branch";
         String repoPath = project.getBasePath();
@@ -70,96 +73,97 @@ public class VersionManageActivity implements StartupActivity {
         }
     }
 
-    // 获取当前项目的所有文件名
-    public static List<String> getAllFileNames(Project project) {
-        List<String> fileNames = new ArrayList<>();
+//    //获取当前项目的所有文件名
+//    public static List<String> getAllFileNames(Project project) {
+//        List<String> fileNames = new ArrayList<>();
+//
+//        //获取项目的根目录
+//        VirtualFile[] projectRoots = ProjectRootManager.getInstance(project).getContentRoots();
+//
+//        for (VirtualFile root : projectRoots) {
+//            //遍历项目根目录下的所有文件和文件夹
+//            visitFilesNameRecursively(root, fileNames);
+//        }
+//
+//        return fileNames;
+//    }
 
-        // 获取项目的根目录
-        VirtualFile[] projectRoots = ProjectRootManager.getInstance(project).getContentRoots();
+    //递归遍历文件夹并添加文件名到列表
+//    private static void visitFilesNameRecursively(@NotNull VirtualFile root, List<String> fileNames) {
+//
+//        //确保文件系统是最新的
+//        root.refresh(false, true);
+//
+//        VirtualFileVisitor<Void> visitor = new VirtualFileVisitor<>() {
+//            @Override
+//            public boolean visitFile(@NotNull VirtualFile file) {
+//                //获取文件名并添加到列表
+//                if (!file.isDirectory()) {
+//                    fileNames.add(file.getPath());
+//                }
+//                return true;
+//            }
+//        };
+//
+//        VirtualFile[] children = root.getChildren();
+//        for (VirtualFile child : children) {
+//            if (child.isDirectory()) {
+//                visitFilesNameRecursively(child, fileNames);
+//            } else {
+//                visitor.visitFile(child); //访问文件
+//            }
+//        }
+//    }
 
-        for (VirtualFile root : projectRoots) {
-            // 遍历项目根目录下的所有文件和文件夹
-            visitFilesNameRecursively(root, fileNames);
-        }
-
-        return fileNames;
-    }
-
-    // 递归遍历文件夹并添加文件名到列表
-    private static void visitFilesNameRecursively(@NotNull VirtualFile root, List<String> fileNames) {
-        root.refresh(false, true);  // 确保文件系统是最新的
-
-        VirtualFileVisitor<Void> visitor = new VirtualFileVisitor<>() {
-            @Override
-            public boolean visitFile(@NotNull VirtualFile file) {
-                // 如果是文件而不是目录，获取文件名并添加到列表
-                if (!file.isDirectory()) {
-                    fileNames.add(file.getPath()); // 使用文件的完整路径
-                }
-                return true; // 继续遍历
-            }
-        };
-
-        // 使用传统的 for 循环遍历子文件
-        VirtualFile[] children = root.getChildren();
-        for (VirtualFile child : children) {
-            if (child.isDirectory()) {
-                visitFilesNameRecursively(child, fileNames); // 递归遍历子目录
-            } else {
-                visitor.visitFile(child); // 访问文件
-            }
-        }
-    }
-
-    // 获取当前项目的所有文件路径
+    //获取当前项目的所有文件路径
     public static List<String> getAllFilePaths(Project project) {
         Set<String> keySet = versionManager.getFilenames();
-        List<String> filePaths = new ArrayList<>(keySet); // 将 Set 转换为 List
-
+        List<String> filePaths = new ArrayList<>(keySet);
         return filePaths;
     }
 
-    // 递归遍历文件夹并添加文件路径到列表
-    private static void visitFilesPathRecursively(@NotNull VirtualFile root, List<String> filePaths) {
-        root.refresh(false, true);  // 确保文件系统是最新的
+//    //递归遍历文件夹并添加文件路径到列表
+//    private static void visitFilesPathRecursively(@NotNull VirtualFile root, List<String> filePaths) {
+//        //确保文件系统是最新的
+//        root.refresh(false, true);
+//
+//        //使用for循环遍历子文件
+//        VirtualFile[] children = root.getChildren();
+//        for (VirtualFile child : children) {
+//            if (child.isDirectory()) {
+//                visitFilesPathRecursively(child, filePaths);
+//            } else {
+//                filePaths.add(child.getPath());
+//            }
+//        }
+//    }
 
-        // 使用 for 循环遍历子文件
-        VirtualFile[] children = root.getChildren();
-        for (VirtualFile child : children) {
-            if (child.isDirectory()) {
-                visitFilesPathRecursively(child, filePaths); // 递归遍历子目录
-            } else {
-                filePaths.add(child.getPath()); // 添加文件路径到列表
-            }
-        }
-    }
-
-    // 获取当前项目的所有 VirtualFile
+    //获取当前项目的所有 VirtualFile
     public static List<VirtualFile> getAllFiles(Project project) {
         List<VirtualFile> files = new ArrayList<>();
 
-        // 获取项目的根目录
+        //获取项目的根目录
         VirtualFile[] projectRoots = ProjectRootManager.getInstance(project).getContentRoots();
 
         for (VirtualFile root : projectRoots) {
-            // 遍历项目根目录下的所有文件和文件夹
+            //遍历项目根目录下的所有文件和文件夹
             visitFilesRecursively(root, files);
         }
 
         return files;
     }
 
-    // 递归遍历文件夹并添加文件到列表
+    //递归遍历文件夹并添加文件到列表
     private static void visitFilesRecursively(@NotNull VirtualFile root, List<VirtualFile> files) {
         root.refresh(false, true);  // 确保文件系统是最新的
 
-        // 使用 for 循环遍历子文件
+        //使用for循环遍历子文件
         VirtualFile[] children = root.getChildren();
         for (VirtualFile child : children) {
             if (child.isDirectory()) {
-                visitFilesRecursively(child, files); // 递归遍历子目录
+                visitFilesRecursively(child, files);
             } else {
-                files.add(child); // 添加文件到列表
+                files.add(child);
             }
         }
     }
@@ -167,21 +171,27 @@ public class VersionManageActivity implements StartupActivity {
     public VersionManager getVersionManager() {
         return versionManager;
     }
+
     public GitCommandRunner getGitCommandRunner() {
         return gitCommandRunner;
     }
+
+    //监听器
     @Override
     public void runActivity(@NotNull Project project) {
-        registerSaveListener(project); // Register the save listener
+        registerSaveListener(project); //Register the save listener
         registerBulkDeleteListener(project);
         registerBulkRenameListener(project);
     }
+
+    //保存文件监听器
     private void registerSaveListener(Project project) {
         ApplicationManager.getApplication().getMessageBus().connect(project)
                 .subscribe(AppTopics.FILE_DOCUMENT_SYNC, new FileDocumentManagerListener() {
                     @Override
                     public void beforeDocumentSaving(@NotNull Document document) {
-                        // 获取文件路径
+
+                        //获取文件路径
                         VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(document);
                         if (virtualFile != null) {
                             String fileName=virtualFile.getName();
@@ -190,6 +200,7 @@ public class VersionManageActivity implements StartupActivity {
 
                             System.out.println("启用监听器");
                             try {
+                                //判断当前分支是否为细粒度分支
                                 if(!gitCommandRunner.isOnFineGrainedBranch(project.getBasePath())){
                                     ProcessBuilder gitStatus = new ProcessBuilder("git", "status");
                                     gitStatus.directory(new File(project.getBasePath()));
@@ -200,8 +211,8 @@ public class VersionManageActivity implements StartupActivity {
                                         System.out.println(line);
                                     }
                                     gitStatusProcess.waitFor();
-                                    // 切换到细粒度分支
 
+                                    //切换到细粒度分支
                                     ProcessBuilder checkoutBaseBranch = new ProcessBuilder("git", "checkout", "fine-grained-branch");
                                     checkoutBaseBranch.directory(new File(project.getBasePath()));
                                     Process checkoutBaseProcess = checkoutBaseBranch.start();
@@ -218,10 +229,14 @@ public class VersionManageActivity implements StartupActivity {
                             }
                             ApplicationManager.getApplication().invokeLater(() -> {
                                 try {
-                                    // 获取文件内容并添加版本
+                                    //获取文件内容并添加版本
                                     String newContent = document.getText();
                                     versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
+
+                                    //保存到文件
                                     versionManager.saveToFile(Paths.get(project.getBasePath(), "version_data.ser").toString());
+
+                                    //提交
                                     gitCommandRunner.commitFineGrainedChanges(project.getBasePath(), filePath, "fine-grained-branch","commit：" + fileName + " version time: " + versionManager.getLatestVersion(filePath).getTimestamp());
                                     System.out.println("保存后执行操作完成: " + filePath);
                                 } catch (IOException | InterruptedException e) {
@@ -236,6 +251,7 @@ public class VersionManageActivity implements StartupActivity {
                 });
     }
 
+    //删除监听器
     public void registerBulkDeleteListener(Project project) {
         ApplicationManager.getApplication().getMessageBus().connect(project)
                 .subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
@@ -248,10 +264,7 @@ public class VersionManageActivity implements StartupActivity {
                                     String filePath = file.getPath();
                                     String fileName = file.getName();
 
-                                    // 自定义删除前操作
                                     System.out.println("File is being deleted: " + filePath);
-
-                                    // 你可以选择在文件删除之前保存版本或执行其他操作
                                     if (versionManager.hasVersion(filePath)) {
                                         versionManager.removeVersion(filePath);
                                         System.out.println("Removed versions for file: " + filePath);
@@ -272,13 +285,14 @@ public class VersionManageActivity implements StartupActivity {
                                 if (file != null && event.isValid()) {
                                     String filePath = file.getPath();
                                     System.out.println("File deleted: " + filePath);
-                                    // 在此处执行其他你想在文件删除后执行的操作
                                 }
                             }
                         }
                     }
                 });
     }
+
+    //重命名监听器
     public void registerBulkRenameListener(Project project) {
         ApplicationManager.getApplication().getMessageBus().connect(project)
                 .subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
@@ -294,7 +308,7 @@ public class VersionManageActivity implements StartupActivity {
                                 VFilePropertyChangeEvent propertyChangeEvent = (VFilePropertyChangeEvent) event;
                                 String propertyName = propertyChangeEvent.getPropertyName();
 
-                                // 检测是否为重命名事件
+                                //检测是否为重命名事件
                                 if (VirtualFile.PROP_NAME.equals(propertyName)) {
                                     VirtualFile file = propertyChangeEvent.getFile();
                                     String oldFilePath = file.getParent().getPath() + "/" + propertyChangeEvent.getOldValue();
@@ -303,7 +317,7 @@ public class VersionManageActivity implements StartupActivity {
 
                                     System.out.println("File renamed from: " + oldFilePath + " to: " + newFilePath);
 
-                                    // 更新版本管理中的路径和文件名
+                                    //更新版本管理中的路径和文件名
                                     if (versionManager.hasVersion(oldFilePath)) {
                                         versionManager.renameFileVersion(oldFilePath, newFilePath, newFileName);
                                         System.out.println("Updated version manager for renamed file: " + newFilePath);
