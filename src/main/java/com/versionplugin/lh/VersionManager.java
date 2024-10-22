@@ -88,7 +88,7 @@ public class VersionManager {
     private void showCompareDialog(String thisContent, String currentContent) {
         // 创建对话框
         JDialog dialog = new JDialog();
-        dialog.setTitle("Version comparison (left side shows the comparison version, right side shows the current version)");
+        dialog.setTitle("Version comparison (left side shows the historical version, right side shows the current version)");
         dialog.setSize(800, 600); // 设置窗口大小
         dialog.setLocationRelativeTo(null); // 居中显示
 
