@@ -222,7 +222,7 @@ public class VersionManageActivity implements StartupActivity {
                                     String newContent = document.getText();
                                     versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
                                     versionManager.saveToFile(Paths.get(project.getBasePath(), "version_data.ser").toString());
-                                    gitCommandRunner.commitFineGrainedChanges(project.getBasePath(), filePath, "fine-grained-branch","提交：" + fileName + " 版本时间: " + versionManager.getLatestVersion(filePath).getTimestamp());
+                                    gitCommandRunner.commitFineGrainedChanges(project.getBasePath(), filePath, "fine-grained-branch","commit：" + fileName + " version time: " + versionManager.getLatestVersion(filePath).getTimestamp());
                                     System.out.println("保存后执行操作完成: " + filePath);
                                 } catch (IOException | InterruptedException e) {
                                     e.printStackTrace();

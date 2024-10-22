@@ -78,7 +78,7 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
                     JOptionPane.showMessageDialog(null, "No file is currently open.", "Warning", JOptionPane.WARNING_MESSAGE);
                 }
                 System.out.println("Committing changes...");
-                // TODO: 添加具体的提交逻辑
+
             }
         });
 
