@@ -14,7 +14,10 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +25,10 @@ import java.util.Set;
 
 public class VersionManageActivity implements StartupActivity {
     private static VersionManager versionManager;
-
+    private static GitCommandRunner gitCommandRunner; // 使用 GitCommandRunner
     public VersionManageActivity() {
         this.versionManager = new VersionManager();
+        this.gitCommandRunner = new GitCommandRunner();
     }
 
     // 初始化文件版本
@@ -51,6 +55,18 @@ public class VersionManageActivity implements StartupActivity {
                 }
                 versionManager.initializeFileVersion(fileName, filePath, initialContent); // 创建初始版本
             }
+        }
+        // 初始化Git仓库
+        String baseBranch = "main";
+        String fineGrainedBranch = "fine-grained-branch";
+        String repoPath = project.getBasePath();
+
+        try {
+            gitCommandRunner.initializeGitRepo(repoPath,baseBranch,fineGrainedBranch);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -151,14 +167,15 @@ public class VersionManageActivity implements StartupActivity {
     public VersionManager getVersionManager() {
         return versionManager;
     }
-
+    public GitCommandRunner getGitCommandRunner() {
+        return gitCommandRunner;
+    }
     @Override
     public void runActivity(@NotNull Project project) {
         registerSaveListener(project); // Register the save listener
         registerBulkDeleteListener(project);
+        registerBulkRenameListener(project);
     }
-
-    //创建监听器监听保存动作
     private void registerSaveListener(Project project) {
         ApplicationManager.getApplication().getMessageBus().connect(project)
                 .subscribe(AppTopics.FILE_DOCUMENT_SYNC, new FileDocumentManagerListener() {
@@ -171,12 +188,47 @@ public class VersionManageActivity implements StartupActivity {
                             String filePath = virtualFile.getPath();
                             System.out.println("File being saved: " + filePath);
 
-                            // 保存版本
                             System.out.println("启用监听器");
-                            String newContent = document.getText();
-                            versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
-                            // 保存版本数据
-                            versionManager.saveToFile(Paths.get(project.getBasePath(), "version_data.ser").toString());
+                            try {
+                                if(!gitCommandRunner.isOnFineGrainedBranch(project.getBasePath())){
+                                    ProcessBuilder gitStatus = new ProcessBuilder("git", "status");
+                                    gitStatus.directory(new File(project.getBasePath()));
+                                    Process gitStatusProcess = gitStatus.start();
+                                    BufferedReader statusReader = new BufferedReader(new InputStreamReader(gitStatusProcess.getInputStream()));
+                                    String line;
+                                    while ((line = statusReader.readLine()) != null) {
+                                        System.out.println(line);
+                                    }
+                                    gitStatusProcess.waitFor();
+                                    // 切换到细粒度分支
+
+                                    ProcessBuilder checkoutBaseBranch = new ProcessBuilder("git", "checkout", "fine-grained-branch");
+                                    checkoutBaseBranch.directory(new File(project.getBasePath()));
+                                    Process checkoutBaseProcess = checkoutBaseBranch.start();
+                                    if(checkoutBaseProcess.waitFor()==0) {
+                                        System.out.println("切换成功");
+                                    } else{
+                                        System.out.println("切换失败");
+                                    }
+                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                try {
+                                    // 获取文件内容并添加版本
+                                    String newContent = document.getText();
+                                    versionManager.addVersion(filePath, new FileVersion(fileName, filePath, newContent));
+                                    versionManager.saveToFile(Paths.get(project.getBasePath(), "version_data.ser").toString());
+                                    gitCommandRunner.commitFineGrainedChanges(project.getBasePath(), filePath, "fine-grained-branch","提交：" + fileName + " 版本时间: " + versionManager.getLatestVersion(filePath).getTimestamp());
+                                    System.out.println("保存后执行操作完成: " + filePath);
+                                } catch (IOException | InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            });
+
                         } else {
                             System.out.println("Unable to determine file path. Virtual file is null.");
                         }
