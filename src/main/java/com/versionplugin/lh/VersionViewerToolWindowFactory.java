@@ -62,10 +62,25 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         commitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // 在此处实现提交的逻辑
-                // 例如，可以调用版本管理的提交方法
+             
                 System.out.println("Committing changes...");
-                // TODO: 添加具体的提交逻辑
+               
+                String currentFilePath =getCurrentFilePath(project);
+                if (currentFilePath != null) {
+                    // 弹出对话框让用户输入提交信息
+                    String commitMessage = JOptionPane.showInputDialog(null, "Enter commit message:", "Commit Changes", JOptionPane.PLAIN_MESSAGE);
+                    if (commitMessage != null && !commitMessage.trim().isEmpty()) {
+                        try {
+                            versionManageActivity.getGitCommandRunner().squashAndMergeFineGrainedCommits(project.getBasePath(),"main", "fine-grained-branch", commitMessage);
+                            JOptionPane.showMessageDialog(null, "Commit successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        } catch (IOException | InterruptedException ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(null, "Commit failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "No file is currently open.", "Warning", JOptionPane.WARNING_MESSAGE);
+                }
             }
         });
 
