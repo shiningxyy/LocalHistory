@@ -210,7 +210,7 @@ public class GitCommandRunner {
             }
 
         }else{
-            JOptionPane.showMessageDialog(null, "合并时发生冲突，请手动解决冲突，然后保存文件！", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Conflict occurred during merging, please manually resolve the conflict and save the file!", "Success", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
