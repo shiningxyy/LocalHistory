@@ -201,32 +201,37 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
         public Object getCellEditorValue() {
             if (isPushed) {
                 int row = versionTable.getSelectedRow();
-                //String fileName = (String) tableModel.getValueAt(row, 0);
-                String filePath = (String) tableModel.getValueAt(row, 2); //获取文件路径
-                int versionNumber = (int) tableModel.getValueAt(row, 3); //获取文件版本号
-                //List<FileVersion> fileContent = versionManageActivity.getVersionManager().getVersions(filePath);
-                int currentNumber = versionManageActivity.getVersionManager().getCurrentVersion(filePath);
+                String fileName = (String) tableModel.getValueAt(row, 0);
+                String filePath = (String) tableModel.getValueAt(row, 2); // 获取文件路径
+                int versionNumber = (int) tableModel.getValueAt(row, 3); // 获取文件版本号
 
-                //区分操作列，处理不同的按钮点击事件
+                List<FileVersion> fileContent = versionManageActivity.getVersionManager().getVersions(filePath);
+                int currentNumber = versionManageActivity.getVersionManager().getCurrentVersion(filePath);
+                // 区分操作列，处理不同的按钮点击事件
                 if (label.equals("View")) {
-                    //查看内容按钮操作
+                    // 查看内容按钮操作
                     versionManageActivity.getVersionManager().compareVersion(filePath, versionNumber - 1, currentNumber - 1);
                 } else if (label.equals("Rollback")) {
-                    //回滚按钮操作
-                    if (Objects.equals(getCurrentFilePath(project), filePath)) {
-                        versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber - 1);
+                    // 回滚按钮操作
+                    int confirm = JOptionPane.showConfirmDialog(button,
+                            "Are you sure to roll back to version " + (versionNumber) + "?",
+                            "Confirm Rollback",
+                            JOptionPane.YES_NO_OPTION);
 
-                        refreshEditor(project, filePath);
-                        JOptionPane.showMessageDialog(button,
-                                "The file has been rolled back to version: " + versionNumber, //文件已回滚到版本
-                                "Rollback operation successful",
-                                JOptionPane.INFORMATION_MESSAGE);
-                    } else {
-                        //如果文件路径不同，弹出警告框
-                        JOptionPane.showMessageDialog(button,
-                                "You cannot roll back this file to the current file!",
-                                "Rollback operation failed", //回滚操作失败
-                                JOptionPane.WARNING_MESSAGE);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        if (Objects.equals(getCurrentFilePath(project), filePath)) {
+                            versionManageActivity.getVersionManager().rollbackVersion(filePath, versionNumber - 1);
+
+                            refreshEditor(project, filePath);
+                            JOptionPane.showMessageDialog(button,
+                                    "File has been rolled back to version: " + versionNumber,
+                                    "Rollback Operation Successful", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            // 如果文件路径不同，弹出警告框
+                            JOptionPane.showMessageDialog(button,
+                                    "You cannot roll back this file to the current file!",
+                                    "Rollback Operation Failed", JOptionPane.WARNING_MESSAGE);
+                        }
                     }
                 }
             }
@@ -234,7 +239,6 @@ public class VersionViewerToolWindowFactory implements ToolWindowFactory {
             isPushed = false;
             return label;
         }
-
         @Override
         public boolean stopCellEditing() {
             isPushed = false;
